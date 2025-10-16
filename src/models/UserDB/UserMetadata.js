@@ -109,6 +109,8 @@ const userMetadataSchema = new mongoose.Schema({
         },
       },
     ],
+    default: [],
+    strict: true,
   },
   joinedCommunities: {
     type: [String], // Array of community IDs
@@ -127,3 +129,27 @@ const userMetadataSchema = new mongoose.Schema({
 const UserMetadata = userDB.model("UserMetadata", userMetadataSchema);
 
 export default UserMetadata;
+
+// tasks: {
+//   type: [
+//     {
+//       title: {
+//         type: String,
+//         required: true,
+//       },
+//       description: {
+//         type: String,
+//         required: true,
+//       },
+//       dueDate: {
+//         type: Date,
+//         required: true,
+//       },
+//     },
+//   ],
+// },
+// tasksCompleted: {
+//   type: Number,
+//   default: 0,
+//   min: [0, "Tasks completed cannot be negative"],
+// },
