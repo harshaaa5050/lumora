@@ -1,9 +1,13 @@
 import mongoose from "mongoose";
 import { userDB } from "../../config/db.js";
+import User from "./User.js";
+import Task from "./Task.js";
+import CompletedTask from "./CompletedTask.js";
 
 const userMetadataSchema = new mongoose.Schema({
   userId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     required: true,
   },
   profile: {
@@ -116,6 +120,18 @@ const userMetadataSchema = new mongoose.Schema({
     type: [String], // Array of community IDs
     default: [],
   },
+  tasks: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Task",
+    },
+  ],
+  completedTasks: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CompletedTask",
+    },
+  ],
   isActive: {
     type: Boolean,
     default: true,
@@ -130,26 +146,3 @@ const UserMetadata = userDB.model("UserMetadata", userMetadataSchema);
 
 export default UserMetadata;
 
-// tasks: {
-//   type: [
-//     {
-//       title: {
-//         type: String,
-//         required: true,
-//       },
-//       description: {
-//         type: String,
-//         required: true,
-//       },
-//       dueDate: {
-//         type: Date,
-//         required: true,
-//       },
-//     },
-//   ],
-// },
-// tasksCompleted: {
-//   type: Number,
-//   default: 0,
-//   min: [0, "Tasks completed cannot be negative"],
-// },
