@@ -1,6 +1,7 @@
 import User from "../models/UserDB/User.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../utils/tokenUtils.js";
+import UserMetadata from "../models/UserDB/UserMetadata.js";
 
 // Creates a new user in the User database
 export const addNewUser = async (data) => {
@@ -16,6 +17,13 @@ export const addNewUser = async (data) => {
 
   const user = await newUser.save();
   if (!user) throw new Error("Failed to create user");
+
+  const newUserMetadata = new UserMetadata({
+    userId: user._id,
+  });
+
+  const userMetadata = await newUserMetadata.save();
+  if (!userMetadata) throw new Error("Failed to create user metadata");
 
   return user;
 };
@@ -33,6 +41,10 @@ export const loginUser = async (identifier, password) => {
 
   //generate token
   const token = generateToken(user);
+  
+  // Remove password from response
+  user.password = undefined;
+  
   return { user, token };
 };
 
