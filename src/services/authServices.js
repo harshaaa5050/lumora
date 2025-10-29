@@ -41,6 +41,10 @@ export const loginUser = async (identifier, password) => {
 
   //generate token
   const token = generateToken(user);
+  
+  // Remove password from response
+  user.password = undefined;
+  
   return { user, token };
 };
 
