@@ -35,3 +35,25 @@ export const editExistingTodo = async (data, todoId) => {
     if(!editedTodo) throw new Error("Failed to edit Todo list");
     return editedTodo;
 }
+
+
+// Delete Todo
+export const deleteExistingTodo = async (todoId) => {
+	// deletes the todo reference from UserMetadata Collection
+	const { userId } = deleteTodo;
+	await deleteTodoReference(userId, todoId);
+	
+	// deletes todo from Todo collection
+	const deleteTodo = await Todo.findByIdAndDelete({ _id: todoId});
+	if(!deleteTodo) throw new Error("404 Todo not Found");
+}
+
+export const deleteTodoReference = async(userId, todoId) => {
+	const userMetadata = await UserMetadata.findOne({ userId });
+	if(!userMetadata) throw new Error("404 UserMetadata not Found");
+	
+	userMetadata.todos = userMetadata.todos.filter((todo) => todo != todoId);
+	const newUserMetadata = await userMetadata.save();
+	if(!newUserMetadata) throw new Error("Failed to update newUserMetadata todo reference");
+
+}
