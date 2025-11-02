@@ -1,0 +1,10 @@
+import express from "express";
+import { communityCreationValidation } from "../validators/communityValidator.js";
+import { createCommunity } from "../controllers/communityController.js";
+
+const communityRouter = express.Router();
+
+// Create a new community
+communityRouter.post("/", communityCreationValidation, createCommunity);
+
+export default communityRouter;
