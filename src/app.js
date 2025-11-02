@@ -6,6 +6,7 @@ import authRouter from "./routes/authRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import { authenticate, isUser } from "./middlewares/authMiddleware.js";
 import env from "./config/env.js";
+import communityRouter from "./routes/communityRoutes.js";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(cookieParser());
 
 // User Routes
 app.use("/auth", authRouter);
+app.use("/user/community", authenticate, isUser, communityRouter);
 app.use("/user", authenticate, isUser, userRouter);
 
 export default app;
