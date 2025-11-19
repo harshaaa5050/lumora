@@ -14,6 +14,8 @@ app.use(
 	cors({
 		origin: env.CLIENT_URL,
 		credentials: true, // Allow cookies to be sent
+		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization"],
 	})
 );
 app.use(express.json());
