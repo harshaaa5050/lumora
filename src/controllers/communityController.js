@@ -8,11 +8,12 @@ import {
 export const createCommunity = async (req, res) => {
 	try {
 		const communityData = req.body;
+		const { userId } = req.auth;
 		const newCommunity = await createNewCommunity({
 			...communityData,
-			createdBy: req.auth.userId,
-			communityAdmin: req.auth.userId,
-			members: [req.auth.userId],
+			createdBy: userId,
+			communityAdmin: userId,
+			members: [userId],
 		});
 		res.status(201).json({ message: "Success", community: newCommunity });
 	} catch (error) {
