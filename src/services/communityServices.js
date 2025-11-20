@@ -7,6 +7,13 @@ export const checkIfCommunityAdmin = (community, userId) => {
 	if (community.communityAdmin.toString() !== userId) throw new Error("not the community admin");
 };
 
+// Find community method
+export const findCommunity = async (communityId) => {
+	const community = Community.findById(communityId);
+	if (!community) throw new Error("Community not found");
+	return community;
+};
+
 // Create a new community
 export const createNewCommunity = async (communityData) => {
 	const newCommunity = new Community(communityData);
@@ -30,22 +37,15 @@ export const createNewCommunity = async (communityData) => {
 
 // CommunityTag existence check
 export const checkCommunityTagExistence = async (communityTag) => {
-	const existingCommunity = await Community.findOne({
-		communityTag,
-	});
+	const existingCommunity = await Community.findOne({ communityTag });
 	return !!existingCommunity;
 };
 
 // Add user to community
 export const addUserToCommunity = async (communityId, userId) => {
-	const community = await Community.findOne({
-		_id: communityId,
-	});
-	if (!community) throw new Error("Community not found");
+	const community = await findCommunity(communityId);
 
-	const userMetadata = await UserMetadata.findOne({
-		userId,
-	});
+	const userMetadata = await UserMetadata.findOne({ userId });
 	if (!userMetadata) throw new Error("User metadata not found");
 
 	if (community.members.includes(userId)) throw new Error("User already a member of the community"); // Prevent duplicate entries
@@ -65,8 +65,7 @@ export const addUserToCommunity = async (communityId, userId) => {
 
 // Remove user from community members
 export const removeUserFromMembers = async (userId, communityId) => {
-	const community = await Community.findById(communityId);
-	if (!community) throw new Error("Community not found");
+	const community = await findCommunity(communityId);
 
 	if (community.communityAdmin.toString() === userId)
 		// checks if user is the community admin
@@ -89,10 +88,7 @@ export const removeUserFromMembers = async (userId, communityId) => {
 
 // Delete community
 export const deleteCommunityIfAdmin = async (userId, communityId) => {
-	const community = await Community.findOne({
-		_id: communityId,
-	});
-	if (!community) throw new Error("Community not found");
+	const community = await findCommunity(communityId);
 
 	checkIfCommunityAdmin(community, userId);
 
@@ -110,10 +106,7 @@ export const deleteCommunityIfAdmin = async (userId, communityId) => {
 
 //Transfer community admin
 export const transferCommunityAdmin = async (communityId, userId, newAdminId) => {
-	const community = await Community.findOne({
-		_id: communityId,
-	});
-	if (!community) throw new Error("Community not found");
+	const community = await findCommunity(communityId);
 
 	checkIfCommunityAdmin(community, userId);
 
@@ -121,17 +114,15 @@ export const transferCommunityAdmin = async (communityId, userId, newAdminId) =>
 	if (!newAdmin) throw new error("Not a valid user id");
 
 	//checks if new admin is a member
-	if (!community.members.some(id => id.toString() === newAdminId.toString())) 
-		throw new Error("The user is not a member in the community")
-	
+	if (!community.members.some((id) => id.toString() === newAdminId.toString())) throw new Error("The user is not a member in the community");
+
 	community.communityAdmin = newAdminId;
 	community.save();
 };
 
 // add new moderator
 export const addNewModerator = async (communityId, userId, moderatorId) => {
-	const community = await Community.findById(communityId);
-	if (!community) throw new Error("Community not found");
+	const community = await findCommunity(communityId);
 
 	checkIfCommunityAdmin(community, userId);
 
