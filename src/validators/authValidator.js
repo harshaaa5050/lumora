@@ -1,5 +1,8 @@
 import { body, validationResult } from "express-validator";
-import {checkUsernameExistence, checkEmailExistence,} from "../services/authServices.js";
+import {
+	checkUsernameExistence,
+	checkEmailExistence,
+} from "../services/authServices.js";
 
 export const userRegistrationValidation = [
 	body("username")

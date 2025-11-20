@@ -66,20 +66,33 @@ export const addUserToCommunity = async (communityId, userId) => {
 export const removeUserFromMembers = async (userId, communityId) => {
 	const community = await Community.findById(communityId);
 	if (!community) throw new Error("Community not found");
-	
-	if (community.communityAdmin.toString() === userId) 	// checks if user is the community admin
-		throw new Error("Admin cannot leave the community before transfering the community admin role");
 
-	if (!community.members.some((id) => id.toString() === userId.toString()))	// checks if the user is a member
+	if (community.communityAdmin.toString() === userId)
+		// checks if user is the community admin
+		throw new Error(
+			"Admin cannot leave the community before transfering the community admin role"
+		);
+
+	if (!community.members.some((id) => id.toString() === userId.toString()))
+		// checks if the user is a member
 		throw new Error("User is not a member of the community");
-		
-	community.members = community.members.filter((id) => id.toString() !== userId.toString());	//filter out the user from members
-	
-	community.moderators = community.moderators.filter((id) => id.toString() !== userId.toString());	//filter out the user from moderators if they are
-	
-	if (!community.previousMembers.some(id => id.toString === userId.toString()))	//adds the userId to previous member list if doesn't exist
-		community.previousMembers.push(userId); 
-		
+
+	community.members = community.members.filter(
+		(id) => id.toString() !== userId.toString()
+	); //filter out the user from members
+
+	community.moderators = community.moderators.filter(
+		(id) => id.toString() !== userId.toString()
+	); //filter out the user from moderators if they are
+
+	if (
+		!community.previousMembers.some(
+			(id) => id.toString === userId.toString()
+		)
+	)
+		//adds the userId to previous member list if doesn't exist
+		community.previousMembers.push(userId);
+
 	await community.save();
 };
 
@@ -102,15 +115,19 @@ export const deleteCommunityIfAdmin = async (userId, communityId) => {
 	return deletedCommunity;
 };
 
-export const transferCommunityAdmin = async (communityId, userId, newAdminId) => {
+export const transferCommunityAdmin = async (
+	communityId,
+	userId,
+	newAdminId
+) => {
 	const community = await Community.findOne({ _id: communityId });
 	if (!community) throw new Error("Community not found");
-	
+
 	checkIfCommunityAdmin(community, userId);
-	
+
 	const newAdmin = await User.findById(newAdminId);
 	if (!newAdmin) throw new error("Not a valid user id");
-	
+
 	community.communityAdmin = newAdminId;
 	community.save();
 };
@@ -119,21 +136,28 @@ export const transferCommunityAdmin = async (communityId, userId, newAdminId) =>
 export const addNewModerator = async (communityId, userId, moderatorId) => {
 	const community = await Community.findById(communityId);
 	if (!community) throw new Error("Community not found");
-	
+
 	checkIfCommunityAdmin(community, userId);
-	
+
 	const newModerator = await User.findById(moderatorId);
 	if (!newModerator) throw new Error("moderatorId is not a valid userId");
-	
+
 	//checks if moderator is a member
-	if (!community.members.some(id => id.toString() === moderatorId.toString())) 
-		throw new Error("The user is not a member in the community")
+	if (
+		!community.members.some(
+			(id) => id.toString() === moderatorId.toString()
+		)
+	)
+		throw new Error("The user is not a member in the community");
 
 	//adds to moderator array (if not included)
-	if (!community.moderators.some(id => id.toString() === moderatorId.toString()))
+	if (
+		!community.moderators.some(
+			(id) => id.toString() === moderatorId.toString()
+		)
+	)
 		community.moderators.push(moderatorId);
-	else
-		throw new Error("User is already a moderator");
-	
+	else throw new Error("User is already a moderator");
+
 	await community.save();
 };

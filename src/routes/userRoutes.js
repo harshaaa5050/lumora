@@ -19,6 +19,6 @@ userRouter
 	.route("/todo/:todoId")
 	.put(taskCreationValidation, editTodo) // Edit Todo
 	.delete(deleteTodo); // Delete Todo
-userRouter.put("/todo/completed/:todoId", completeTodo)
+userRouter.put("/todo/completed/:todoId", completeTodo);
 
 export default userRouter;

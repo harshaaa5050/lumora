@@ -17,13 +17,13 @@ export const communityCreationValidation = [
 		.withMessage(
 			"Community Tag can only contain letters, numbers, underscores, and hyphens"
 		)
-        .bail()
-        .custom(async (value, { req }) => {
-            const exists = await checkCommunityTagExistence(value);
-            if (exists) {
-                throw new Error("Community Tag already exists");
-            }
-        }),
+		.bail()
+		.custom(async (value, { req }) => {
+			const exists = await checkCommunityTagExistence(value);
+			if (exists) {
+				throw new Error("Community Tag already exists");
+			}
+		}),
 
 	body("communityName")
 		.trim()

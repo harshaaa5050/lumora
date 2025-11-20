@@ -18,7 +18,7 @@ export const addNewTodo = async (data) => {
 	}
 	newUserMetadata.todos.push(todo._id);
 	const userMetadata = await newUserMetadata.save();
-	if (!userMetadata){
+	if (!userMetadata) {
 		deleteTodoById(todo._id);
 		throw new Error("Failed to save todo in user metadata");
 	}
@@ -53,7 +53,7 @@ export const deleteExistingTodo = async (todoId) => {
 	await deleteTodoById(todo._id);
 };
 
-async function deleteTodoReference (userId, todoId) {
+async function deleteTodoReference(userId, todoId) {
 	const userMetadata = await UserMetadata.findOne({ userId });
 	if (!userMetadata) throw new Error("404 UserMetadata not Found");
 
@@ -63,26 +63,28 @@ async function deleteTodoReference (userId, todoId) {
 	const newUserMetadata = await userMetadata.save();
 	if (!newUserMetadata)
 		throw new Error("Failed to update newUserMetadata todo reference");
-};
+}
 
-async function deleteTodoById (todoId) {
+async function deleteTodoById(todoId) {
 	const deleted = await Todo.findByIdAndDelete(todoId);
 	if (!deleted) throw new Error("Failed to delete Todo");
-};
+}
 
 // Get all Todos of a user
 export const getAllTodoOfUser = async (userId) => {
-	const userMetadata = await UserMetadata.findOne({ userId }).populate("todos");
+	const userMetadata = await UserMetadata.findOne({ userId }).populate(
+		"todos"
+	);
 	if (!userMetadata) throw new Error("404 Todos not Found");
-	return userMetadata.todos ;
-}
+	return userMetadata.todos;
+};
 
 // Mark Todo as completed
 export const markTodoAsCompleted = async (todoId) => {
 	const todo = await Todo.findById(todoId);
-	if(!todo) throw new Error("Todo does not exist");
+	if (!todo) throw new Error("Todo does not exist");
 	todo.isCompleted = !todo.isCompleted;
 	todo.completedAt = Date.now();
 	const completedTodo = await todo.save();
-	if(!completedTodo) throw new Error("Failed to update complete status")
+	if (!completedTodo) throw new Error("Failed to update complete status");
 };
