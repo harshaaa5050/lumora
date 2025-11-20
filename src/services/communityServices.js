@@ -7,6 +7,12 @@ export const checkIfCommunityAdmin = (community, userId) => {
 	if (community.communityAdmin.toString() !== userId) throw new Error("not the community admin");
 };
 
+// Check if the requesting user is a community admin or moderator
+export const checkIfAdminOrModerator = (community, userId) => {
+	if(!(community.communityAdmin.toString() === userId || community.moderators.some((id) => id.toString() === userId)))
+		throw new Error("not the community admin or moderator");
+};
+
 // Find community method
 export const findCommunity = async (communityId) => {
 	const community = Community.findById(communityId);
@@ -135,6 +141,17 @@ export const addNewModerator = async (communityId, userId, moderatorId) => {
 	//adds to moderator array (if not included)
 	if (!community.moderators.some((id) => id.toString() === moderatorId.toString())) community.moderators.push(moderatorId);
 	else throw new Error("User is already a moderator");
+
+	await community.save();
+};
+
+// change privacy of a community
+export const changePrivacySettings = async (userId, communityId) => {
+	const community = await findCommunity(communityId);
+	
+	checkIfAdminOrModerator(community, userId);
+
+	community.isPrivate = !community.isPrivate;
 
 	await community.save();
 };
