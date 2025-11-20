@@ -57,12 +57,9 @@ async function deleteTodoReference(userId, todoId) {
 	const userMetadata = await UserMetadata.findOne({ userId });
 	if (!userMetadata) throw new Error("404 UserMetadata not Found");
 
-	userMetadata.todos = userMetadata.todos.filter(
-		(id) => id.toString() !== todoId.toString()
-	);
+	userMetadata.todos = userMetadata.todos.filter((id) => id.toString() !== todoId.toString());
 	const newUserMetadata = await userMetadata.save();
-	if (!newUserMetadata)
-		throw new Error("Failed to update newUserMetadata todo reference");
+	if (!newUserMetadata) throw new Error("Failed to update newUserMetadata todo reference");
 }
 
 async function deleteTodoById(todoId) {
@@ -72,9 +69,7 @@ async function deleteTodoById(todoId) {
 
 // Get all Todos of a user
 export const getAllTodoOfUser = async (userId) => {
-	const userMetadata = await UserMetadata.findOne({ userId }).populate(
-		"todos"
-	);
+	const userMetadata = await UserMetadata.findOne({ userId }).populate("todos");
 	if (!userMetadata) throw new Error("404 Todos not Found");
 	return userMetadata.todos;
 };

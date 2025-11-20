@@ -1,12 +1,6 @@
 import express from "express";
 import { taskCreationValidation } from "../validators/todoValidator.js";
-import {
-	addTodo,
-	completeTodo,
-	deleteTodo,
-	editTodo,
-	getAllTodo,
-} from "../controllers/todoController.js";
+import { addTodo, completeTodo, deleteTodo, editTodo, getAllTodo } from "../controllers/todoController.js";
 
 const userRouter = express.Router();
 

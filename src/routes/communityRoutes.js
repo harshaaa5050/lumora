@@ -16,15 +16,9 @@ communityRouter.post("/create", communityCreationValidation, createCommunity); /
 communityRouter.post("/join/:communityId", joinCommunity); // Join community
 communityRouter.post("/leave/:communityId", leaveCommunity); // Leave community
 communityRouter.delete("/delete/:communityId", deleteCommunity); // delete community
-communityRouter.put(
-	"/admin/transfer-admin/:communityId/:newAdminId",
-	changeCommunityAdmin
-);
+communityRouter.put("/admin/transfer-admin/:communityId/:newAdminId", changeCommunityAdmin);
 
 // community admin routes
-communityAdminRouter.post(
-	"/add-moderator/:communityId/:moderatorId",
-	addmoderator
-);
+communityAdminRouter.post("/add-moderator/:communityId/:moderatorId", addmoderator);
 
 export { communityAdminRouter, communityRouter };
