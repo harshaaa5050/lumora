@@ -1,6 +1,7 @@
 import {
 	addNewModerator,
 	addUserToCommunity,
+	changePrivacySettings,
 	createNewCommunity,
 	deleteCommunityIfAdmin,
 	removeUserFromMembers,
@@ -80,6 +81,18 @@ export const addmoderator = async (req, res) => {
 		const { communityId, moderatorId } = req.params;
 		await addNewModerator(communityId, userId, moderatorId);
 		res.status(200).json({ message: "Added moderator successfully" });
+	} catch (error) {
+		res.status(500).json({ success: false, error: error.message });
+	}
+};
+
+// Change privacy settings of a community
+export const setPrivacy = async (req, res) => {
+	try {
+		const { userId } = req.auth;
+		const { communityId } = req.params;
+		await changePrivacySettings(userId, communityId);
+		res.status(200).json({ message: "Successfully changed the privacy settings"});
 	} catch (error) {
 		res.status(500).json({ success: false, error: error.message });
 	}

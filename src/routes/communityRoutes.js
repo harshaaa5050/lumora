@@ -7,6 +7,7 @@ import {
 	deleteCommunity,
 	joinCommunity,
 	leaveCommunity,
+	setPrivacy,
 } from "../controllers/communityController.js";
 
 const communityRouter = express.Router(); // community user routes
@@ -16,9 +17,10 @@ communityRouter.post("/create", communityCreationValidation, createCommunity); /
 communityRouter.post("/join/:communityId", joinCommunity); // Join community
 communityRouter.post("/leave/:communityId", leaveCommunity); // Leave community
 communityRouter.delete("/delete/:communityId", deleteCommunity); // delete community
-communityRouter.put("/admin/transfer-admin/:communityId/:newAdminId", changeCommunityAdmin);
 
 // community admin routes
+communityAdminRouter.put("/transfer-admin/:communityId/:newAdminId", changeCommunityAdmin);
 communityAdminRouter.post("/add-moderator/:communityId/:moderatorId", addmoderator);
+communityAdminRouter.put("/set-privacy/:communityId", setPrivacy);
 
 export { communityAdminRouter, communityRouter };
