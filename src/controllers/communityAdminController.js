@@ -42,7 +42,6 @@ export const revokeModerator = async (req, res) => {
 	try {
 		const { userId } = req.auth;
 		const { communityId, moderatorId } = req.params;
-		console.log(moderatorId);
 		await revokeCommunityModerator(communityId, userId, moderatorId);
 		res.status(200).json({message: "Moderator revoked successfully"});
 	} catch (error) {
