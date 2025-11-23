@@ -1,8 +1,8 @@
 import express from "express";
 import { taskCreationValidation } from "../validators/todoValidator.js";
 import { addTodo, completeTodo, deleteTodo, editTodo, getAllTodo } from "../controllers/todoController.js";
-import { userReportValidation } from "../validators/userValidator.js";
-import { reportUser } from "../controllers/userController.js";
+import { reportValidation } from "../validators/userValidator.js";
+import { reportCommunity, reportUser } from "../controllers/userController.js";
 
 const userRouter = express.Router();
 
@@ -16,6 +16,7 @@ userRouter
 	.put(taskCreationValidation, editTodo) // Edit Todo
 	.delete(deleteTodo); // Delete Todo
 userRouter.put("/todo/completed/:todoId", completeTodo);
-userRouter.post("/report-user/:communityId/:reportedUserId", userReportValidation, reportUser);
+userRouter.post("/report-user/:communityId/:reportedUserId", reportValidation, reportUser);
+userRouter.post("/report-community/:communityId", reportValidation, reportCommunity);
 
 export default userRouter;

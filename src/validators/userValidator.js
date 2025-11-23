@@ -1,6 +1,6 @@
 import { body, validationResult } from "express-validator";
 
-export const userReportValidation = [
+export const reportValidation = [
 	body("reasonType")
 		.trim()
 		.notEmpty()
