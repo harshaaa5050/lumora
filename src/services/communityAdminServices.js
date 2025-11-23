@@ -87,6 +87,10 @@ export const changePrivacySettings = async (userId, communityId) => {
 
 	community.isPrivate = !community.isPrivate;
 
+	// update membership mode based on privacy setting
+	if (community.isPrivate) community.membershipMode = "invite-only";
+	else community.membershipMode = "request-to-join";
+
 	await community.save();
 };
 
@@ -95,11 +99,17 @@ export const changeMembershipMode = async (userId, communityId, membershipMode) 
 	const community = await findCommunity(communityId);
 
 	checkIfCommunityAdmin(community, userId);
-	
+
 	const membershipModes = ["open", "invite-only", "request-to-join"];
 	if (!membershipModes.includes(membershipMode)) throw new Error("Provided option is not a valid membership mode");
-	
+
 	community.membershipMode = membershipMode;
+
+	//set community to private if membership mode is invite-only
+	if (membershipMode === "invite-only") community.isPrivate = true;
+
+	//set community to public if membership mode is not invite-only
+	if (membershipMode !== "invite-only") community.isPrivate = false;
 
 	await community.save();
 };
