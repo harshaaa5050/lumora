@@ -43,19 +43,54 @@ export const addUserToCommunity = async (communityId, userId) => {
 	const userMetadata = await UserMetadata.findOne({ userId });
 	if (!userMetadata) throw new Error("User metadata not found");
 
-	if (community.members.includes(userId)) throw new Error("User already a member of the community"); // Prevent duplicate entries
+	if (community.members.some((id) => id.toString() === userId.toString()))
+		throw new Error("User already a member of the community"); // Prevent duplicate entries
 
-	community.members.push(userId);
-	const updatedCommunity = await community.save();
-	if (!updatedCommunity) throw new Error("Failed to add user to community");
+	// check the membership mode
+	if (community.membershipMode === "open") {
+		community.members.push(userId);
+		const updatedCommunity = await community.save();
+		if (!updatedCommunity) throw new Error("Failed to add user to community");
 
-	userMetadata.joinedCommunities.push(community._id);
-	const savedMetadata = await userMetadata.save();
-	if (!savedMetadata) {
-		await Community.updateOne({ _id: communityId }, { $pull: { members: userId } });
-		throw new Error("Failed to update user metadata");
+		userMetadata.joinedCommunities.push(community._id);
+		const savedMetadata = await userMetadata.save();
+		if (!savedMetadata) {
+			await Community.updateOne({ _id: communityId }, { $pull: { members: userId } });
+			throw new Error("Failed to update user metadata");
+		}
+		return true; // return true indicating user added directly
+	} else if (community.membershipMode === "request-to-join") {
+		if (community.joinRequests.some((id) => id.toString() === userId.toString()))
+			throw new Error("The user has already sent a join request"); // Prevent duplicate entries
+
+		community.joinRequests.push(userId);
+		const updatedCommunity = await community.save();
+		if (!updatedCommunity) throw new Error("Failed to send join request");
+
+		return false; // return false indicating join request sent
+	} else throw new Error("Cannot join an invite-only community directly");
+};
+
+// add user using invite link
+export const addUserWithInviteCode = async (userId, inviteCode) => {
+	const community = await Community.findOne({ inviteCode });
+	if (!community) throw new Error("Invalid invite code");
+
+	if (community.members.some((id) => id.toString() === userId.toString()))
+		throw new Error("The user is already a member of the community"); // Prevent duplicate entries
+	
+	// adds user if membership mode is open
+	if (community.membershipMode === "open") {
+		await addUserToCommunity(community._id, userId);
+		return "open";
 	}
-	return updatedCommunity;
+
+	if (community.joinRequests.some((id) => id.toString() === userId.toString()))
+		throw new Error("The user has already sent a join request"); // Prevent duplicate request entries
+
+	community.joinRequests.push(userId);
+	const updatedCommunity = await community.save();
+	if (!updatedCommunity) throw new Error("Failed to send join request");
 };
 
 // Remove user from community members

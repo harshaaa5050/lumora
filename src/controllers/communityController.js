@@ -1,4 +1,4 @@
-import { addUserToCommunity, createNewCommunity, removeUserFromMembers } from "../services/communityServices.js";
+import { addUserToCommunity, addUserWithInviteCode, createNewCommunity, removeUserFromMembers } from "../services/communityServices.js";
 
 // Create a new community
 export const createCommunity = async (req, res) => {
@@ -22,9 +22,25 @@ export const joinCommunity = async (req, res) => {
 	try {
 		const { communityId } = req.params;
 		const { userId } = req.auth;
-		await addUserToCommunity(communityId, userId);
-		res.status(200).json({ message: "Successfully joined the community" });
+		const added = await addUserToCommunity(communityId, userId);
+		if (added) res.status(200).json({ message: "Joined the community successfully" });
+		else res.status(200).json({ message: "Sent a join request" });
 	} catch (error) {
+		res.status(500).json({ success: false, error: error.message });
+	}
+};
+
+// Join communtiy using invite code
+export const joinUsingInviteCode = async (req, res) => {
+	try {
+		const { inviteCode } = req.body;
+		const { userId } = req.auth;
+		const mode = await addUserWithInviteCode(userId, inviteCode);
+		// seperate success message if membership mode is open
+		if (mode === "open")
+			res.status(200).json({ message: "Joined the community successfully" });
+		res.status(200).json({ message: "Sent join request" });
+	}catch (error) {
 		res.status(500).json({ success: false, error: error.message });
 	}
 };
