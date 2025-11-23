@@ -74,6 +74,14 @@ const communitySchema = new mongoose.Schema(
 			enum: ["open", "invite-only", "request-to-join"],
 			default: "open",
 		},
+		inviteCode: {
+			type: String,
+		},
+		joinRequests: {
+			type: [mongoose.Schema.Types.ObjectId],
+			ref: "User",
+		},
+
 		videoRooms: {
 			type: [mongoose.Schema.Types.ObjectId],
 			ref: "VideoRoom",

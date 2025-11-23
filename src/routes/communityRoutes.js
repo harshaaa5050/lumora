@@ -1,6 +1,6 @@
 import express from "express";
 import { communityCreationValidation } from "../validators/communityValidator.js";
-import { createCommunity, joinCommunity, leaveCommunity } from "../controllers/communityController.js";
+import { createCommunity, joinCommunity, joinUsingInviteCode, leaveCommunity } from "../controllers/communityController.js";
 import {
 	addmoderator,
 	blockUsers,
@@ -16,6 +16,7 @@ const communityRouter = express.Router(); // community user routes
 const communityAdminRouter = express.Router(); //community admin routes
 
 communityRouter.post("/create", communityCreationValidation, createCommunity); // Create a new community
+communityRouter.post("/join/invite-code" ,joinUsingInviteCode); // Join community using invite code
 communityRouter.post("/join/:communityId", joinCommunity); // Join community
 communityRouter.post("/leave/:communityId", leaveCommunity); // Leave community
 
