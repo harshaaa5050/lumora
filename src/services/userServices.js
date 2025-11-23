@@ -1,3 +1,4 @@
+import CommunityReport from "../models/AdminDB/CommunityReport.js";
 import UserReport from "../models/AdminDB/UserReport.js";
 import { findCommunity } from "./communityServices.js"
 
@@ -20,4 +21,22 @@ export const reportUserFromCommunity = async (userId, communityId, reportedUserI
     });
 
     return report;
+};
+
+// Report a community
+export const reportACommunity = async (userId, communityId, reasonType, reason) => {
+	const community = await findCommunity(communityId);
+
+	if (!community.members.some((id) => id.toString() === userId.toString()))
+		// checks if the user is a member
+		throw new Error("User is not a member of the community");
+
+	const report = await CommunityReport.create({
+		reportedBy: userId,
+		reportedCommunity: communityId,
+		reasonType,
+		reason,
+	});
+
+	return report;
 };
