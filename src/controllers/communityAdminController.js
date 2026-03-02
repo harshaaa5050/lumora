@@ -8,6 +8,7 @@ import {
 	updateCommunityRules,
 	blockCommunityUsers,
 	fetchAllJoinRequests,
+	setNewInviteCode,
 } from "../services/communityAdminServices.js";
 // Delete a community
 export const deleteCommunity = async (req, res) => {
@@ -78,6 +79,18 @@ export const updateMembershipMode = async (req, res) => {
 		const { membershipMode, approveAllRequest } = req.body;
 		await changeMembershipMode(userId, communityId, membershipMode, approveAllRequest);
 		res.status(200).json({ message: "Successfully changed the membership mode" });
+	} catch (error) {
+		res.status(500).json({ success: false, error: error.message });
+	}
+};
+
+// change invite code
+export const changeInviteCode = async (req, res) => {
+	try {
+		const { userId } = req.auth;
+		const { communityId } = req.params;
+		await setNewInviteCode(userId, communityId);
+		res.status(200).json({ message: "Changed the invite code successfully"});
 	} catch (error) {
 		res.status(500).json({ success: false, error: error.message });
 	}

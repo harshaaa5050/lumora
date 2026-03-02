@@ -5,6 +5,7 @@ import {
 	addmoderator,
 	blockUsers,
 	changeCommunityAdmin,
+	changeInviteCode,
 	deleteCommunity,
 	fetchJoinRequests,
 	revokeModerator,
@@ -28,6 +29,7 @@ communityAdminRouter.patch("/add-moderator/:communityId/:newModeratorId", addmod
 communityAdminRouter.patch("/revoke-moderator/:communityId/:moderatorId", revokeModerator);
 communityAdminRouter.patch("/set-privacy/:communityId", setPrivacy);
 communityAdminRouter.patch("/change-membership-mode/:communityId", updateMembershipMode); //changes membership mode
+communityAdminRouter.patch("/change-invite-code/:communityId", changeInviteCode); //changes invite code
 communityAdminRouter.patch("/update-community-rules/:communityId", updateRules);
 communityAdminRouter.patch("/block-users/:communityId/:blockUserId", blockUsers);
 communityAdminRouter.get("/fetch-all-joinrequests/:communityId", fetchJoinRequests)
