@@ -7,6 +7,7 @@ import {
 	transferCommunityAdmin,
 	updateCommunityRules,
 	blockCommunityUsers,
+	fetchAllJoinRequests,
 	setNewInviteCode,
 } from "../services/communityAdminServices.js";
 // Delete a community
@@ -115,6 +116,18 @@ export const blockUsers = async (req, res) => {
 		const { communityId, blockUserId } = req.params;
 		await blockCommunityUsers(userId, communityId, blockUserId);
 		res.status(200).json({ message: "Successfully blocked the user" });
+	} catch (error) {
+		res.status(500).json({ success: false, error: error.message });
+	}
+};
+
+// Fetch all join requests
+export const fetchJoinRequests = async (req, res) => {
+	try {
+		const { userId } = req.auth;
+		const { communityId } = req.params;
+		const joinRequests = await fetchAllJoinRequests(communityId, userId);
+		res.status(200).json({ success: true, joinRequests });
 	} catch (error) {
 		res.status(500).json({ success: false, error: error.message });
 	}

@@ -4,7 +4,7 @@ import UserMetadata from "../models/UserDB/UserMetadata.js";
 
 // Find community method
 export const findCommunity = async (communityId) => {
-	const community = Community.findById(communityId);
+	const community = await Community.findById(communityId);
 	if (!community) throw new Error("Community not found");
 	return community;
 };
