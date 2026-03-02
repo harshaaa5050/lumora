@@ -167,3 +167,11 @@ export const blockCommunityUsers = async (userId, communityId, blockUserId) => {
 
 	await community.save();
 };
+
+// fetch all join requests
+export const fetchAllJoinRequests = async (communityId, userId) => {
+	const community = await findCommunity(communityId);
+	checkIfAdminOrModerator(community, userId);
+	if (!community.joinRequests || community.joinRequests.length === 0) return [];
+	return community.joinRequests;
+};

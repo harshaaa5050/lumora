@@ -6,6 +6,7 @@ import {
 	blockUsers,
 	changeCommunityAdmin,
 	deleteCommunity,
+	fetchJoinRequests,
 	revokeModerator,
 	setPrivacy,
 	updateMembershipMode,
@@ -29,5 +30,6 @@ communityAdminRouter.patch("/set-privacy/:communityId", setPrivacy);
 communityAdminRouter.patch("/change-membership-mode/:communityId", updateMembershipMode); //changes membership mode
 communityAdminRouter.patch("/update-community-rules/:communityId", updateRules);
 communityAdminRouter.patch("/block-users/:communityId/:blockUserId", blockUsers);
+communityAdminRouter.get("/fetch-all-joinrequests/:communityId", fetchJoinRequests)
 
 export { communityAdminRouter, communityRouter };
