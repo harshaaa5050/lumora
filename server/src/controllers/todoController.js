@@ -3,6 +3,7 @@ import {
 	deleteExistingTodo,
 	editExistingTodo,
 	getAllTodoOfUser,
+	getAllCompletedTodosOfUser,
 	markTodoAsCompleted,
 } from "../services/todoServices.js";
 
@@ -53,7 +54,17 @@ export const deleteTodo = async (req, res) => {
 	}
 };
 
-// Get all Todos of a user
+// Get all completed Todos of a user
+export const getAllCompletedTodo = async (req, res) => {
+	try {
+		const todos = await getAllCompletedTodosOfUser(req.auth.userId);
+		res.status(200).json({ success: true, data: todos });
+	} catch (error) {
+		res.status(401).json({ success: false, message: error.message });
+	}
+};
+
+// Get all active Todos of a user
 export const getAllTodo = async (req, res) => {
 	try {
 		const todos = await getAllTodoOfUser(req.auth.userId);
@@ -67,10 +78,11 @@ export const getAllTodo = async (req, res) => {
 export const completeTodo = async (req, res) => {
 	try {
 		const { todoId } = req.params;
-		await markTodoAsCompleted(todoId);
-		res.status(201).json({
+		const { userId } = req.auth;
+		await markTodoAsCompleted(todoId, userId);
+		res.status(200).json({
 			status: "Success",
-			message: "Todo marked as completed",
+			message: "Todo completion status updated",
 		});
 	} catch (error) {
 		res.status(401).json({ success: false, message: error.message });

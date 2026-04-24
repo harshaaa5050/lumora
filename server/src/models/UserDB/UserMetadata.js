@@ -77,6 +77,9 @@ const userMetadataSchema = new mongoose.Schema({
 		default: 0,
 		min: [0, "Streak count cannot be negative"],
 	},
+	lastTodoCompletionDate: {
+		type: Date,
+	},
 	maxStreakCount: {
 		type: Number,
 		default: 0,

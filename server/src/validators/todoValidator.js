@@ -11,9 +11,9 @@ export const taskCreationValidation = [
 		.withMessage("Due date must be a valid date")
 		.bail()
 		.custom((value) => {
-			const dueDate = new Date(value);
-			const now = new Date();
-			if (dueDate < now) throw new Error("Due date must be in the future");
+			const due = new Date(value); due.setHours(0, 0, 0, 0);
+			const today = new Date(); today.setHours(0, 0, 0, 0);
+			if (due < today) throw new Error("Due date must be today or in the future");
 			return true;
 		}),
 
