@@ -425,6 +425,12 @@
   margin-bottom: 16px;
 }
 
+.pomo-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .pomo-title {
   font-family: 'Syne', sans-serif;
   font-size: 15px;
@@ -440,6 +446,95 @@
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.07);
 }
+
+.pomo-customize-btn {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.pomo-customize-btn:hover,
+.pomo-customize-btn.active {
+  background: rgba(139,92,246,0.15);
+  border-color: rgba(139,92,246,0.3);
+  color: #8b5cf6;
+}
+
+.pomo-customize-panel {
+  width: 100%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pomo-customize-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pomo-customize-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.pomo-customize-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pomo-customize-input {
+  width: 56px;
+  padding: 5px 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 13px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.pomo-customize-input:focus { border-color: rgba(139,92,246,0.5); }
+.pomo-customize-input::-webkit-inner-spin-button,
+.pomo-customize-input::-webkit-outer-spin-button { opacity: 0.4; }
+
+.pomo-customize-unit {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.pomo-customize-save {
+  align-self: flex-end;
+  padding: 6px 18px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6d28d9, #8b5cf6);
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.pomo-customize-save:hover { opacity: 0.9; transform: translateY(-1px); }
 
 .pomo-modes {
   display: flex;

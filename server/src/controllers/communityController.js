@@ -61,8 +61,9 @@ export const leaveCommunity = async (req, res) => {
 		const { communityId } = req.params;
 		const { userId } = req.auth;
 		await removeUserFromMembers(userId, communityId);
-		res.status(200).json({ message: "Successfully left the community" });
+		res.status(200).json({ success: true, message: "Successfully left the community" });
 	} catch (error) {
-		res.status(500).json({ success: false, error: error.message });
+		console.error("leaveCommunity error:", error.message);
+		res.status(400).json({ success: false, message: error.message });
 	}
 };

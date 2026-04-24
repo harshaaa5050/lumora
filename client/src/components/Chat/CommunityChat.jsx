@@ -182,9 +182,10 @@ const TypingIndicator = ({ username }) => (
 
 /* ── Community Details Panel ─────────────────────────────────────── */
 function CommunityDetailsPanel({ community, messages, currentUser, onClose, onLeave }) {
-  const [tab,       setTab]       = useState('about');
-  const [leaving,   setLeaving]   = useState(false);
-  const [leaveErr,  setLeaveErr]  = useState('');
+  const [tab,          setTab]          = useState('about');
+  const [leaving,      setLeaving]      = useState(false);
+  const [leaveErr,     setLeaveErr]     = useState('');
+  const [showConfirm,  setShowConfirm]  = useState(false);
 
   const membersData   = community.membersData ?? [];
   const isAdmin       = membersData.find(m => m._id === currentUser._id)?.role === 'admin';
@@ -196,7 +197,7 @@ function CommunityDetailsPanel({ community, messages, currentUser, onClose, onLe
     m.attachments?.some(a => !isImageUrl(a.url) && a.type !== 'image')
   );
 
-  const handleLeave = async () => {
+  const confirmLeave = async () => {
     setLeaving(true);
     setLeaveErr('');
     try {
@@ -204,6 +205,7 @@ function CommunityDetailsPanel({ community, messages, currentUser, onClose, onLe
       onLeave();
     } catch (e) {
       setLeaveErr(e.message || 'Failed to leave');
+      setShowConfirm(false);
     }
     setLeaving(false);
   };
@@ -295,10 +297,10 @@ function CommunityDetailsPanel({ community, messages, currentUser, onClose, onLe
                 {leaveErr && <p className="details-leave-err">{leaveErr}</p>}
                 <button
                   className="details-leave-btn"
-                  onClick={handleLeave}
+                  onClick={() => setShowConfirm(true)}
                   disabled={leaving}
                 >
-                  {leaving ? 'Leaving…' : '↩ Leave Community'}
+                  ↩ Leave Community
                 </button>
               </div>
             )}
@@ -378,6 +380,37 @@ function CommunityDetailsPanel({ community, messages, currentUser, onClose, onLe
           </div>
         )}
       </div>
+
+      {/* ── Leave confirmation dialog ────────────────────────────── */}
+      {showConfirm && (
+        <div className="leave-confirm-overlay" onClick={() => !leaving && setShowConfirm(false)}>
+          <div className="leave-confirm-dialog" onClick={e => e.stopPropagation()}>
+            <div className="leave-confirm-icon">↩</div>
+            <h3 className="leave-confirm-title">Leave community?</h3>
+            <p className="leave-confirm-body">
+              You'll lose access to <strong>{community.communityName}</strong> and its messages.
+              You can rejoin later if it's public.
+            </p>
+            {leaveErr && <p className="leave-confirm-err">{leaveErr}</p>}
+            <div className="leave-confirm-actions">
+              <button
+                className="leave-confirm-cancel"
+                onClick={() => setShowConfirm(false)}
+                disabled={leaving}
+              >
+                Cancel
+              </button>
+              <button
+                className="leave-confirm-ok"
+                onClick={confirmLeave}
+                disabled={leaving}
+              >
+                {leaving ? 'Leaving…' : 'Yes, leave'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

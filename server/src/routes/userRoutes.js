@@ -3,6 +3,7 @@ import { taskCreationValidation } from "../validators/todoValidator.js";
 import { addTodo, completeTodo, deleteTodo, editTodo, getAllTodo, getAllCompletedTodo } from "../controllers/todoController.js";
 import { reportValidation } from "../validators/userValidator.js";
 import { getUserProfile, getJoinedCommunities, getPublicCommunities, reportCommunity, reportUser } from "../controllers/userController.js";
+import { logSession, getTodayFocus } from "../controllers/timerController.js";
 
 const userRouter = express.Router();
 
@@ -22,6 +23,10 @@ userRouter
 	.route("/todo/:todoId")
 	.put(taskCreationValidation, editTodo)
 	.delete(deleteTodo);
+// Timer routes
+userRouter.post("/timer/log", logSession);
+userRouter.get("/timer/today", getTodayFocus);
+
 userRouter.post("/report-user/:communityId/:reportedUserId", reportValidation, reportUser);
 userRouter.post("/report-community/:communityId", reportValidation, reportCommunity);
 

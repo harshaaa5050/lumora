@@ -9,7 +9,7 @@
   padding: 24px;
   position: relative;
   overflow: hidden;
-  font-family: 'DM Sans', 'Inter', sans-serif;
+  font-family: 'Outfit', 'DM Sans', 'Inter', sans-serif;
 }
 
 /* ── Background orbs ─────────────────────────────────────────────── */
@@ -29,13 +29,15 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
+  min-height: 520px;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 28px;
   padding: 40px 36px 36px;
   backdrop-filter: blur(20px);
   box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.1);
+  overflow: hidden;
 }
 
 /* ── Logo block ──────────────────────────────────────────────────── */
@@ -46,24 +48,8 @@
   margin-bottom: 28px;
 }
 
-.auth-logo-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #6d28d9, #8b5cf6, #ec4899);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Syne', sans-serif;
-  font-size: 22px;
-  font-weight: 800;
-  color: #fff;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 28px rgba(109,40,217,0.4);
-}
-
 .auth-brand {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Playfair Display', 'Syne', serif;
   font-size: 26px;
   font-weight: 800;
   background: linear-gradient(135deg, #8b5cf6, #ec4899);
@@ -103,11 +89,12 @@
   cursor: pointer;
   position: relative;
   z-index: 1;
-  transition: color 0.2s;
-  font-family: 'DM Sans', 'Inter', sans-serif;
+  transition: color 0.25s;
+  font-family: 'Outfit', 'DM Sans', 'Inter', sans-serif;
+  letter-spacing: 0.01em;
 }
 .auth-tab:hover  { color: #94a3b8; }
-.auth-tab.active { color: #f1f5f9; }
+.auth-tab.active { color: #f1f5f9; font-weight: 600; }
 
 .auth-tab-indicator {
   position: absolute;
@@ -116,7 +103,6 @@
   background: rgba(139,92,246,0.15);
   border: 1px solid rgba(139,92,246,0.3);
   border-radius: 10px;
-  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Error banner ────────────────────────────────────────────────── */
@@ -175,7 +161,7 @@
   outline: none;
   color: #f1f5f9;
   font-size: 14px;
-  font-family: 'DM Sans', 'Inter', sans-serif;
+  font-family: 'Outfit', 'DM Sans', 'Inter', sans-serif;
 }
 .auth-input::placeholder { color: #475569; }
 
@@ -219,7 +205,8 @@
   color: #fff;
   font-size: 14px;
   font-weight: 600;
-  font-family: 'DM Sans', 'Inter', sans-serif;
+  font-family: 'Outfit', 'DM Sans', 'Inter', sans-serif;
+  letter-spacing: 0.02em;
   border: none;
   cursor: pointer;
   box-shadow: 0 6px 24px rgba(109,40,217,0.35);
@@ -291,7 +278,7 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  font-family: 'DM Sans', 'Inter', sans-serif;
+  font-family: 'Outfit', 'DM Sans', 'Inter', sans-serif;
   transition: color 0.2s;
 }
 .auth-switch-link:hover { color: #a78bfa; }

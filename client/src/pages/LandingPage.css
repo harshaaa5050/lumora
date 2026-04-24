@@ -3,7 +3,7 @@
   min-height: 100vh;
   background: #080812;
   color: #f1f5f9;
-  font-family: 'DM Sans', 'Inter', -apple-system, sans-serif;
+  font-family: 'Outfit', 'DM Sans', 'Inter', -apple-system, sans-serif;
   overflow-x: hidden;
   position: relative;
 }
@@ -35,7 +35,7 @@
 }
 
 .navbar-logo {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Playfair Display', 'Syne', serif;
   font-size: 22px;
   font-weight: 700;
   background: linear-gradient(135deg, #8b5cf6, #ec4899);
@@ -70,7 +70,7 @@
   color: #fff;
   border: none;
   transition: opacity 0.2s, transform 0.15s;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Outfit', 'DM Sans', sans-serif;
 }
 .navbar-cta:hover { opacity: 0.9; transform: translateY(-1px); }
 
@@ -87,38 +87,13 @@
   padding: 140px 24px 80px;
 }
 
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border-radius: 20px;
-  background: rgba(139,92,246,0.12);
-  border: 1px solid rgba(139,92,246,0.3);
-  color: #a78bfa;
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 28px;
-}
-
-.hero-badge-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #8b5cf6;
-  animation: heroPulse 2s infinite;
-}
-@keyframes heroPulse {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.4; }
-}
-
 .hero-title {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(40px, 6vw, 72px);
+  font-family: 'Playfair Display', 'Syne', serif;
+  font-size: clamp(44px, 6.5vw, 80px);
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  max-width: 800px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  max-width: 860px;
   margin-bottom: 24px;
 }
 
@@ -131,11 +106,14 @@
 }
 
 .hero-sub {
+  font-family: 'DM Sans', 'Outfit', sans-serif;
   font-size: 18px;
+  font-weight: 300;
   color: #94a3b8;
   max-width: 580px;
-  line-height: 1.7;
+  line-height: 1.75;
   margin-bottom: 40px;
+  letter-spacing: 0.01em;
 }
 
 .hero-actions {
@@ -146,7 +124,7 @@
 }
 
 .btn-primary {
-  padding: 14px 32px;
+  padding: 14px 36px;
   border-radius: 12px;
   background: linear-gradient(135deg, #6d28d9, #8b5cf6);
   color: #fff;
@@ -156,7 +134,8 @@
   cursor: pointer;
   transition: opacity 0.2s, transform 0.15s;
   box-shadow: 0 8px 32px rgba(109,40,217,0.35);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Outfit', 'DM Sans', sans-serif;
+  letter-spacing: 0.02em;
 }
 .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
 
@@ -244,7 +223,7 @@
 }
 
 .section-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Playfair Display', 'Syne', serif;
   font-size: clamp(28px, 4vw, 44px);
   font-weight: 700;
   line-height: 1.2;
@@ -289,11 +268,12 @@
 }
 
 .feature-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Outfit', 'Syne', sans-serif;
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
   color: #f1f5f9;
+  letter-spacing: 0.01em;
 }
 
 .feature-desc {
@@ -301,68 +281,6 @@
   color: #64748b;
   line-height: 1.6;
 }
-
-/* ── Dashboard ───────────────────────────────────────────────────── */
-.dashboard-wrap {
-  position: relative;
-  z-index: 1;
-  padding: 0 24px 96px;
-  display: flex;
-  justify-content: center;
-}
-
-.dashboard-panel {
-  width: 100%;
-  max-width: 760px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 24px;
-  padding: 36px;
-  backdrop-filter: blur(12px);
-}
-
-.dashboard-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 28px;
-}
-
-.dashboard-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.dashboard-sub {
-  font-size: 12px;
-  color: #22c55e;
-  font-weight: 500;
-}
-
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.stat-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 16px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  cursor: default;
-  transition: border-color 0.2s;
-}
-.stat-card:hover { border-color: rgba(139,92,246,0.35); }
-
-.stat-icon { font-size: 22px; }
-.stat-val  { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; color: #f1f5f9; }
-.stat-unit { font-size: 12px; color: #64748b; font-weight: 500; }
 
 /* ── CTA ─────────────────────────────────────────────────────────── */
 .cta-section {
@@ -384,7 +302,7 @@
 }
 
 .cta-box h2 {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Playfair Display', 'Syne', serif;
   font-size: clamp(24px, 3.5vw, 36px);
   font-weight: 700;
   margin-bottom: 16px;
@@ -412,7 +330,7 @@ footer {
 }
 
 .footer-logo {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Playfair Display', 'Syne', serif;
   font-size: 16px;
   font-weight: 700;
   background: linear-gradient(135deg, #8b5cf6, #ec4899);

@@ -3,7 +3,7 @@ import AICoach from '../components/AICoach/AICoach.jsx';
 import AppSidebar from '../components/AppSidebar/AppSidebar.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { getUserProfile, getTodos, getCompletedTodos, addTodo, editTodo, deleteTodo, toggleTodo, getJoinedCommunities, getPublicCommunities } from '../api/userApi.js';
+import { getUserProfile, getTodos, getCompletedTodos, addTodo, editTodo, deleteTodo, toggleTodo, getJoinedCommunities, getPublicCommunities, logFocusSession, getTodayFocus } from '../api/userApi.js';
 import { joinCommunity } from '../api/communityApi.js';
 import './Dashboard.css';
 
@@ -25,11 +25,18 @@ const NAV_ITEMS = [
   { icon: '✦', label: 'Analytics', path: '/analytics' },
 ];
 
-const POMO_MODES = [
-  { key: 'work',       label: 'Focus',      mins: 25, color: '#8b5cf6' },
-  { key: 'short',      label: 'Short Break', mins: 5,  color: '#22c55e' },
-  { key: 'long',       label: 'Long Break',  mins: 15, color: '#06b6d4' },
+const POMO_MODE_DEFS = [
+  { key: 'work',  label: 'Focus',       color: '#8b5cf6' },
+  { key: 'short', label: 'Short Break', color: '#22c55e' },
+  { key: 'long',  label: 'Long Break',  color: '#06b6d4' },
 ];
+
+const CUSTOM_KEY = 'lumora_pomo_custom';
+function loadCustomMins() {
+  try { const s = localStorage.getItem(CUSTOM_KEY); if (s) return JSON.parse(s); } catch {}
+  return { work: 25, short: 5, long: 15 };
+}
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v)));
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
 const pad = (n) => String(n).padStart(2, '0');
@@ -37,17 +44,24 @@ const getInitials = (name) => name.split(' ').map(n => n[0]).join('').slice(0, 2
 const DAYS = ['S','M','T','W','T','F','S'];
 
 /* ── Pomodoro Timer ──────────────────────────────────────────────── */
-function PomodoroTimer() {
-  const [modeIdx, setModeIdx]     = useState(0);
-  const [seconds, setSeconds]     = useState(POMO_MODES[0].mins * 60);
-  const [running, setRunning]     = useState(false);
-  const [sessions, setSessions]   = useState(0);
-  const intervalRef               = useRef(null);
-  const mode                      = POMO_MODES[modeIdx];
-  const total                     = mode.mins * 60;
-  const progress                  = seconds / total;
-  const R                         = 88;
-  const CIRC                      = 2 * Math.PI * R;
+function PomodoroTimer({ onFocusLogged }) {
+  const [customMins,    setCustomMins]    = useState(loadCustomMins);
+  const [showCustomize, setShowCustomize] = useState(false);
+  const [draft,         setDraft]        = useState(loadCustomMins);
+  const [modeIdx,       setModeIdx]      = useState(0);
+  const [running,       setRunning]      = useState(false);
+  const [sessions,      setSessions]     = useState(0);
+  const intervalRef = useRef(null);
+
+  const modes = POMO_MODE_DEFS.map(d => ({ ...d, mins: customMins[d.key] }));
+  const mode  = modes[modeIdx];
+
+  const [seconds, setSeconds] = useState(mode.mins * 60);
+
+  const total    = mode.mins * 60;
+  const progress = seconds / total;
+  const R        = 88;
+  const CIRC     = 2 * Math.PI * R;
 
   useEffect(() => {
     if (running) {
@@ -56,7 +70,10 @@ function PomodoroTimer() {
           if (s <= 1) {
             clearInterval(intervalRef.current);
             setRunning(false);
-            if (mode.key === 'work') setSessions(n => n + 1);
+            if (mode.key === 'work') {
+              setSessions(n => n + 1);
+              logFocusSession(total).then(() => onFocusLogged?.(total)).catch(console.error);
+            }
             return 0;
           }
           return s - 1;
@@ -72,7 +89,7 @@ function PomodoroTimer() {
     clearInterval(intervalRef.current);
     setRunning(false);
     setModeIdx(idx);
-    setSeconds(POMO_MODES[idx].mins * 60);
+    setSeconds(modes[idx].mins * 60);
   };
 
   const reset = () => {
@@ -81,16 +98,70 @@ function PomodoroTimer() {
     setSeconds(mode.mins * 60);
   };
 
+  const applyCustom = () => {
+    const validated = {
+      work:  clamp(draft.work,  1, 120),
+      short: clamp(draft.short, 1,  60),
+      long:  clamp(draft.long,  1,  60),
+    };
+    setCustomMins(validated);
+    setDraft(validated);
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(validated));
+    setShowCustomize(false);
+    clearInterval(intervalRef.current);
+    setRunning(false);
+    setSeconds(validated[mode.key] * 60);
+  };
+
   return (
     <div className="pomo-card">
       <div className="pomo-header">
         <span className="pomo-title">Pomodoro Timer</span>
-        <span className="pomo-sessions">{sessions} sessions today</span>
+        <div className="pomo-header-right">
+          <span className="pomo-sessions">{sessions} sessions today</span>
+          <button
+            className={`pomo-customize-btn ${showCustomize ? 'active' : ''}`}
+            onClick={() => { setShowCustomize(v => !v); setDraft(customMins); }}
+            title="Customize durations"
+          >
+            ⚙
+          </button>
+        </div>
       </div>
+
+      {/* Customize panel */}
+      <AnimatePresence>
+        {showCustomize && (
+          <motion.div
+            className="pomo-customize-panel"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {POMO_MODE_DEFS.map(d => (
+              <div key={d.key} className="pomo-customize-row">
+                <span className="pomo-customize-label" style={{ color: d.color }}>{d.label}</span>
+                <div className="pomo-customize-input-wrap">
+                  <input
+                    type="number"
+                    className="pomo-customize-input"
+                    value={draft[d.key]}
+                    min={1} max={d.key === 'work' ? 120 : 60}
+                    onChange={e => setDraft(prev => ({ ...prev, [d.key]: Number(e.target.value) }))}
+                  />
+                  <span className="pomo-customize-unit">min</span>
+                </div>
+              </div>
+            ))}
+            <button className="pomo-customize-save" onClick={applyCustom}>Apply</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mode tabs */}
       <div className="pomo-modes">
-        {POMO_MODES.map((m, i) => (
+        {modes.map((m, i) => (
           <button
             key={m.key}
             className={`pomo-mode-btn ${modeIdx === i ? 'active' : ''}`}
@@ -185,7 +256,15 @@ function StreakCard({ streak = 0, longest = 0 }) {
 }
 
 /* ── Stats Row ───────────────────────────────────────────────────── */
-function StatsRow({ todos, completedTodos, communityCount }) {
+function fmtFocus(secs) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return '0m';
+}
+
+function StatsRow({ todos, completedTodos, communityCount, focusSeconds }) {
   const todayActive    = todos.filter(isTodayOrPast);
   const todayCompleted = completedTodos.filter(t => dayTs(t.createdAt) === todayTs());
   const otherCompleted = completedTodos.filter(t => dayTs(t.createdAt) !== todayTs());
@@ -194,7 +273,7 @@ function StatsRow({ todos, completedTodos, communityCount }) {
   const progressTotal = todayActive.length + todayCompleted.length + otherCompleted.length;
 
   const stats = [
-    { icon: '⏱', val: '4h 20m',                             label: 'Focus today',  color: '#8b5cf6' },
+    { icon: '⏱', val: fmtFocus(focusSeconds ?? 0),          label: 'Focus today',  color: '#8b5cf6' },
     { icon: '✅', val: `${progressDone} / ${progressTotal}`, label: 'Tasks done',   color: '#22c55e' },
     { icon: '⬡', val: String(communityCount),               label: 'Communities',  color: '#06b6d4' },
     { icon: '📈', val: '+12%',                               label: 'vs last week', color: '#ec4899' },
@@ -589,13 +668,17 @@ export default function Dashboard() {
   const [completedTodos, setCompletedTodos] = useState([]);
   const [communities,    setCommunities]    = useState([]);
   const [showExplore,    setShowExplore]    = useState(false);
+  const [focusSeconds,   setFocusSeconds]   = useState(0);
 
   const fetchUser           = useCallback(() => getUserProfile().then(({ userMetadata }) => setUser(userMetadata)).catch(console.error), []);
   const fetchTodos          = useCallback(() => getTodos().then(({ data }) => setTodos(data)).catch(console.error), []);
   const fetchCompletedTodos = useCallback(() => getCompletedTodos().then(({ data }) => setCompletedTodos(data)).catch(console.error), []);
   const fetchCommunities    = useCallback(() => getJoinedCommunities().then(({ communities }) => setCommunities(communities)).catch(console.error), []);
+  const fetchFocus          = useCallback(() => getTodayFocus().then(({ seconds }) => setFocusSeconds(seconds)).catch(console.error), []);
 
-  useEffect(() => { fetchUser(); fetchTodos(); fetchCompletedTodos(); fetchCommunities(); }, [fetchUser, fetchTodos, fetchCompletedTodos, fetchCommunities]);
+  useEffect(() => { fetchUser(); fetchTodos(); fetchCompletedTodos(); fetchCommunities(); fetchFocus(); }, [fetchUser, fetchTodos, fetchCompletedTodos, fetchCommunities, fetchFocus]);
+
+  const handleFocusLogged = (elapsed) => setFocusSeconds(prev => prev + elapsed);
 
   return (
     <div className="dash-root">
@@ -628,7 +711,7 @@ export default function Dashboard() {
         </header>
 
         {/* Stats */}
-        <StatsRow todos={todos} completedTodos={completedTodos} communityCount={communities.length} />
+        <StatsRow todos={todos} completedTodos={completedTodos} communityCount={communities.length} focusSeconds={focusSeconds} />
 
         {/* Main grid */}
         <div className="dash-grid">
@@ -641,7 +724,7 @@ export default function Dashboard() {
 
           {/* Right column */}
           <div className="dash-col-left">
-            <PomodoroTimer />
+            <PomodoroTimer onFocusLogged={handleFocusLogged} />
             <StreakCard streak={user?.streakCount ?? 0} longest={user?.maxStreakCount ?? 0} />
           </div>
 
