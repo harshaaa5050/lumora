@@ -1,10 +1,15 @@
 import axios from "axios";
+import { getToken } from "./token";
 
 const BASE = import.meta.env.VITE_BACKEND_URL;
 
-const headers = () => ({
-	"Content-Type": "application/json",
-});
+const headers = () => {
+	const token = getToken();
+	return {
+		"Content-Type": "application/json",
+		...(token && { Authorization: `Bearer ${token}` }),
+	};
+};
 
 const handle = async (request) => {
 	try {
