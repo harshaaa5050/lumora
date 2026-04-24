@@ -16,21 +16,21 @@ export function registerChatSocket(io) {
 
 			try {
 				if (isValidId(communityId)) {
-					const messages = await CommunityChat.find({
+					const raw = await CommunityChat.find({
 						communityId,
 						isDeleted: false,
 					})
 						.sort({ createdAt: -1 })
 						.limit(HISTORY_LIMIT)
-						.populate("senderId", "username")
-						.populate({
-							path: "replyTo",
-							select: "content senderId",
-							populate: { path: "senderId", select: "username" },
-						})
 						.lean();
 
-					socket.emit("message-history", messages.reverse());
+					const messages = raw.reverse().map(m => ({
+						...m,
+						senderId: { _id: m.senderId.toString(), username: m.senderUsername || "Unknown" },
+						replyTo: m.replyTo?.toString() ?? null,
+					}));
+
+					socket.emit("message-history", messages);
 				} else {
 					socket.emit("message-history", []);
 				}
@@ -61,6 +61,7 @@ export function registerChatSocket(io) {
 					const saved = await CommunityChat.create({
 						communityId,
 						senderId: userId,
+						senderUsername: username,
 						content: content.trim(),
 						messageType,
 						replyTo: isValidId(replyTo) ? replyTo : undefined,

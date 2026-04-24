@@ -1,0 +1,58 @@
+.community-page {
+  display: flex;
+  height: 100vh;
+  background: #080812;
+  overflow: hidden;
+}
+
+/* ── Right chat area ─────────────────────────────────────────────── */
+.cp-chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.cp-chat-area .chat-layout {
+  flex: 1;
+  height: 100%;
+}
+
+.cp-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-loading-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(139,92,246,0.2);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: cp-spin 0.7s linear infinite;
+}
+
+@keyframes cp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.cp-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #334155;
+}
+
+.cp-empty-icon {
+  font-size: 48px;
+  opacity: 0.4;
+}
+
+.cp-empty-state p {
+  font-size: 14px;
+}

@@ -2,6 +2,37 @@ import Community from "../models/CommunityDB/Community.js";
 import User from "../models/UserDB/User.js";
 import UserMetadata from "../models/UserDB/UserMetadata.js";
 
+export const fetchCommunityDetails = async (communityId) => {
+	const community = await Community.findById(communityId)
+		.select("communityName communityTag description members communityAdmin moderators isPrivate membershipMode");
+	if (!community) throw new Error("Community not found");
+
+	// Cross-DB: manually resolve member usernames from userDB
+	const users = await User.find({ _id: { $in: community.members } }, "username");
+	const usersMap = new Map(users.map(u => [u._id.toString(), u.username]));
+	const adminId = community.communityAdmin.toString();
+	const moderatorSet = new Set(community.moderators.map(m => m.toString()));
+
+	const membersData = community.members.map(id => {
+		const idStr = id.toString();
+		return {
+			_id: idStr,
+			username: usersMap.get(idStr) || "Unknown",
+			role: idStr === adminId ? "admin" : moderatorSet.has(idStr) ? "moderator" : "member",
+		};
+	});
+
+	return {
+		_id: community._id,
+		communityName: community.communityName,
+		communityTag: community.communityTag,
+		description: community.description,
+		isPrivate: community.isPrivate,
+		membershipMode: community.membershipMode,
+		membersData,
+	};
+};
+
 // Find community method
 export const findCommunity = async (communityId) => {
 	const community = await Community.findById(communityId);

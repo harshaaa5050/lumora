@@ -3,20 +3,7 @@ import { io } from 'socket.io-client';
 import './CommunityChat.css';
 import VideoSession from '../VideoSession/VideoSession.jsx';
 
-/* ── Session identity (replace with real auth later) ─────────────── */
-const SOCKET_URL     = 'http://localhost:3000';
-const COMMUNITY_ID   = 'lumora-design-community';   // swap for real ObjectId later
-const CURRENT_USER_ID = 'currentUser';
-const CURRENT_USERNAME = 'You';
-
-const MOCK_MEMBERS = [
-  { _id: 'user1',       username: 'Alex Rivera', online: true,  role: 'admin'     },
-  { _id: 'user2',       username: 'Maya Chen',   online: true,  role: 'moderator' },
-  { _id: 'user3',       username: 'Jordan Lee',  online: false, role: 'member'    },
-  { _id: 'user4',       username: 'Sam Torres',  online: true,  role: 'member'    },
-  { _id: 'user5',       username: 'Riley Park',  online: false, role: 'member'    },
-  { _id: CURRENT_USER_ID, username: 'You',       online: true,  role: 'member'    },
-];
+const SOCKET_URL = import.meta.env.VITE_BACKEND_URL?.replace('/api', '') || 'http://localhost:3000';
 
 
 const EMOJIS = ['😀','😂','🥰','😎','🤔','😮','👍','👎','❤️','🔥','✨','🎉',
@@ -25,7 +12,7 @@ const EMOJIS = ['😀','😂','🥰','😎','🤔','😮','👍','👎','❤️'
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
 const getInitials = (name) =>
-  name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  (name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
 const AVATAR_COLORS = [
   '#7c3aed','#2563eb','#059669','#dc2626','#d97706',
@@ -33,7 +20,7 @@ const AVATAR_COLORS = [
 ];
 const getAvatarColor = (userId) => {
   let hash = 0;
-  for (const c of userId) hash = (hash * 31 + c.charCodeAt(0)) | 0;
+  for (const c of (userId || '')) hash = (hash * 31 + c.charCodeAt(0)) | 0;
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 };
 
@@ -157,14 +144,19 @@ const TypingIndicator = ({ username }) => (
 );
 
 /* ── Main Component ──────────────────────────────────────────────── */
-export default function CommunityChat() {
+export default function CommunityChat({ community, currentUser }) {
+  const communityId   = community._id;
+  const communityName = community.communityName;
+  const communityTag  = community.communityTag;
+  const membersData   = community.membersData ?? [];
+
   const [messages, setMessages]         = useState([]);
   const [inputText, setInputText]       = useState('');
   const [replyingTo, setReplyingTo]     = useState(null);
   const [sidebarOpen, setSidebarOpen]   = useState(true);
   const [showEmoji, setShowEmoji]       = useState(false);
   const [showAttach, setShowAttach]     = useState(false);
-  const [typingUsers, setTypingUsers]   = useState({});  // userId -> username
+  const [typingUsers, setTypingUsers]   = useState({});
   const [videoSession, setVideoSession] = useState(null);
 
   const messagesEndRef = useRef(null);
@@ -172,17 +164,15 @@ export default function CommunityChat() {
   const socketRef      = useRef(null);
   const typingTimer    = useRef(null);
 
-  const onlineCount = MOCK_MEMBERS.filter(m => m.online).length;
-
   /* ── Socket setup ────────────────────────────────────────────── */
   useEffect(() => {
     const socket = io(SOCKET_URL, { withCredentials: true });
     socketRef.current = socket;
 
     socket.emit('join-community', {
-      communityId: COMMUNITY_ID,
-      userId: CURRENT_USER_ID,
-      username: CURRENT_USERNAME,
+      communityId,
+      userId: currentUser._id,
+      username: currentUser.username,
     });
 
     socket.on('message-history', (history) => {
@@ -212,10 +202,10 @@ export default function CommunityChat() {
     });
 
     return () => {
-      socket.emit('leave-community', { communityId: COMMUNITY_ID });
+      socket.emit('leave-community', { communityId });
       socket.disconnect();
     };
-  }, []);
+  }, [communityId, currentUser._id, currentUser.username]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -228,12 +218,12 @@ export default function CommunityChat() {
 
   /* ── Typing indicator emission ───────────────────────────────── */
   const emitTyping = useCallback(() => {
-    socketRef.current?.emit('typing', { communityId: COMMUNITY_ID });
+    socketRef.current?.emit('typing', { communityId });
     clearTimeout(typingTimer.current);
     typingTimer.current = setTimeout(() => {
-      socketRef.current?.emit('stop-typing', { communityId: COMMUNITY_ID });
+      socketRef.current?.emit('stop-typing', { communityId });
     }, 2000);
-  }, []);
+  }, [communityId]);
 
   const handleSend = useCallback(() => {
     const text = inputText.trim();
@@ -241,7 +231,7 @@ export default function CommunityChat() {
 
     const localMsg = {
       _id: `local-${Date.now()}`,
-      senderId: { _id: CURRENT_USER_ID, username: CURRENT_USERNAME, role: 'member' },
+      senderId: { _id: currentUser._id, username: currentUser.username, role: 'member' },
       content: text,
       messageType: 'text',
       attachments: [],
@@ -254,18 +244,18 @@ export default function CommunityChat() {
     setMessages(prev => [...prev, localMsg]);
 
     socketRef.current?.emit('send-message', {
-      communityId: COMMUNITY_ID,
+      communityId,
       content: text,
       messageType: 'text',
       replyTo: replyingTo?._id ?? null,
     });
 
     clearTimeout(typingTimer.current);
-    socketRef.current?.emit('stop-typing', { communityId: COMMUNITY_ID });
+    socketRef.current?.emit('stop-typing', { communityId });
     setInputText('');
     setReplyingTo(null);
     closePopovers();
-  }, [inputText, replyingTo, closePopovers]);
+  }, [communityId, currentUser, inputText, replyingTo, closePopovers]);
 
   const handleKey = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -303,20 +293,20 @@ export default function CommunityChat() {
     <div className="chat-layout" onClick={closePopovers}>
 
       {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside className={`sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
+      {/* <aside className={`sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
         <div className="sidebar-header">
           <div className="sidebar-title">Community</div>
           <div className="community-info">
-            <div className="community-avatar">L</div>
+            <div className="community-avatar">{getInitials(communityName)}</div>
             <div>
-              <div className="community-name">Lumora Design</div>
-              <div className="community-tag">#design-general</div>
+              <div className="community-name">{communityName}</div>
+              <div className="community-tag">#{communityTag}</div>
             </div>
           </div>
         </div>
         <div className="sidebar-members">
-          <div className="members-section-label">Online — {onlineCount}</div>
-          {MOCK_MEMBERS.filter(m => m.online).map((m, i) => (
+          <div className="members-section-label">Members — {membersData.length}</div>
+          {membersData.map((m, i) => (
             <div
               className="member-item"
               key={m._id}
@@ -338,31 +328,8 @@ export default function CommunityChat() {
               )}
             </div>
           ))}
-
-          <div className="members-section-label" style={{ marginTop: 12 }}>
-            Offline — {MOCK_MEMBERS.filter(m => !m.online).length}
-          </div>
-          {MOCK_MEMBERS.filter(m => !m.online).map((m, i) => (
-            <div
-              className="member-item"
-              key={m._id}
-              style={{ animationDelay: `${i * 0.05 + 0.15}s`, opacity: 0.6 }}
-            >
-              <div
-                className="member-avatar"
-                style={{ background: `linear-gradient(135deg, ${getAvatarColor(m._id)}80, ${getAvatarColor(m._id + '_')}50)` }}
-              >
-                {getInitials(m.username)}
-                <span className="member-status-dot offline" />
-              </div>
-              <div className="member-info">
-                <div className="member-name">{m.username}</div>
-                <div className="member-role">{m.role}</div>
-              </div>
-            </div>
-          ))}
         </div>
-      </aside>
+      </aside> */}
 
       {/* ── Main Chat ───────────────────────────────────────────── */}
       <div className="chat-main">
@@ -378,26 +345,26 @@ export default function CommunityChat() {
           </button>
           <div className="header-info">
             <div className="header-community-name">
-              # design-general
+              # {communityTag}
               <span className="live-badge">LIVE</span>
             </div>
-            <div className="header-subtitle">Lumora Design Community · {messages.length} messages</div>
+            <div className="header-subtitle">{communityName} · {messages.length} messages</div>
           </div>
           <div className="header-actions">
             <div className="online-pill">
               <span className="online-dot-small" />
-              {onlineCount} online
+              {membersData.length} members
             </div>
             <button className="header-btn" title="Search">🔍</button>
             <button
               className="header-btn"
-              title="Start silent video session"
+              title="Start video session"
               onClick={e => {
                 e.stopPropagation();
                 setVideoSession({
-                  roomId: 'community-lumora-design',
-                  userId: CURRENT_USER_ID,
-                  username: 'You',
+                  roomId: `community-${communityId}`,
+                  userId: currentUser._id,
+                  username: currentUser.username,
                 });
               }}
             >📹</button>
@@ -414,7 +381,7 @@ export default function CommunityChat() {
           </div>
 
           {groupedMessages.map((group) => {
-            const isOwn = group[0].senderId._id === CURRENT_USER_ID;
+            const isOwn = group[0].senderId._id === currentUser._id;
             return (
               <div className="message-group" key={group[0]._id}>
                 {group.map((msg, idx) => (

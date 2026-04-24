@@ -35,3 +35,6 @@ export const deleteTodo = (todoId) =>
 
 export const toggleTodo = (todoId) =>
 	handle(axios.patch(`${BASE}/user/todo/completed/${todoId}`, {}, { withCredentials: true, headers: headers() }));
+
+export const getJoinedCommunities = () =>
+	handle(axios.get(`${BASE}/user/communities`, { withCredentials: true, headers: headers() }));

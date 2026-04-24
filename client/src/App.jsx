@@ -1,5 +1,5 @@
 import React from 'react';
-import CommunityChat from './components/Chat/CommunityChat';
+import CommunityPage from './pages/CommunityPage.jsx';
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from './Pages/LandingPage.jsx'
 import Login from './auth/Login.jsx'
@@ -19,7 +19,7 @@ const App = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route path="/community" element={<CommunityChat />} />
+          <Route path="/community" element={<CommunityPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
 
           <Route path="/admin" element={<AdminLayout />}>
