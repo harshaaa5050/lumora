@@ -9,10 +9,11 @@ export const signup = async (req, res) => {
 		const { username, email, role } = user;
 
 		// Set token in HTTP-only cookie
+		const isProduction = process.env.NODE_ENV === "production";
 		res.cookie("token", token, {
 			httpOnly: true,
-			secure: process.env.NODE_ENV === "production",
-			sameSite: "strict",
+			secure: isProduction,
+			sameSite: isProduction ? "none" : "strict",
 		});
 
 		res.status(201).json({
@@ -36,10 +37,11 @@ export const login = async (req, res) => {
 		const { user, token } = await loginUser(identifier, password);
 
 		// Set token in HTTP-only cookie
+		const isProduction = process.env.NODE_ENV === "production";
 		res.cookie("token", token, {
 			httpOnly: true,
-			secure: process.env.NODE_ENV === "production",
-			sameSite: "strict",
+			secure: isProduction,
+			sameSite: isProduction ? "none" : "strict",
 		});
 
 		res.status(200).json({
@@ -63,7 +65,12 @@ export const login = async (req, res) => {
 export const logout = async (req, res) => {
 	try {
 		// remove cookie
-		res.clearCookie("token");
+		const isProduction = process.env.NODE_ENV === "production";
+		res.clearCookie("token", {
+			httpOnly: true,
+			secure: isProduction,
+			sameSite: isProduction ? "none" : "strict",
+		});
 		res.status(200).json({ success: true, message: "Logged out successfully" });
 	} catch (error) {
 		res.status(500).json({ success: false, error: error.message });
