@@ -17,9 +17,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
+const allowedOrigins = env.CLIENT_URL
+	? env.CLIENT_URL.split(",").map((u) => u.trim())
+	: ["http://localhost:5173"];
+
 app.use(
 	cors({
-		origin: env.CLIENT_URL,
+		origin: (origin, callback) => {
+			if (!origin || allowedOrigins.includes(origin)) {
+				callback(null, true);
+			} else {
+				callback(new Error(`CORS blocked: ${origin}`));
+			}
+		},
 		credentials: true, // Allow cookies to be sent
 		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization"],
