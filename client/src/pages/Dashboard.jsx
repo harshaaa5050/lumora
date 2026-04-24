@@ -2,8 +2,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import AICoach from '../components/AICoach/AICoach.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { getUserProfile } from '../api/userApi.js';
+import { getUserProfile, getTodos, getCompletedTodos, addTodo, editTodo, deleteTodo, toggleTodo } from '../api/userApi.js';
 import './Dashboard.css';
+
+/* ── Date helpers ────────────────────────────────────────────────── */
+const todayTs = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
+const dayTs   = (v)  => { const d = new Date(v); d.setHours(0, 0, 0, 0); return d.getTime(); };
+const isTodayOrPast = (todo) => !!todo.dueDate && dayTs(todo.dueDate) <= todayTs();
 
 const MOCK_COMMUNITIES = [
   { _id: '1', communityName: 'Lumora Design',    communityTag: 'design',   members: 142, online: 8,  lastMsg: '2m ago',  color: '#8b5cf6' },
@@ -13,13 +18,6 @@ const MOCK_COMMUNITIES = [
 ];
 
 const MOCK_STREAK_WEEK = [true, true, true, false, true, true, true]; // Sun–Sat
-const MOCK_TODOS = [
-  { _id: 't1', title: 'Review design mockups',     done: true  },
-  { _id: 't2', title: 'Complete backend API docs',  done: false },
-  { _id: 't3', title: 'Write weekly report',        done: false },
-  { _id: 't4', title: 'Push community feature',     done: true  },
-  { _id: 't5', title: 'Team sync at 4pm',           done: false },
-];
 
 const NAV_ITEMS = [
   { icon: '⊞', label: 'Dashboard', path: '/dashboard' },
@@ -181,7 +179,7 @@ function StreakCard({ streak = 0, longest = 0 }) {
       </div>
 
       <div className="streak-bar-wrap">
-        <div className="streak-bar" style={{ width: `${(streak / longest) * 100}%` }} />
+        <div className="streak-bar" style={{ width: longest > 0 ? `${Math.min((streak / longest) * 100, 100)}%` : streak > 0 ? '100%' : '0%' }} />
         <span className="streak-bar-label">{streak}/{longest} personal best</span>
       </div>
     </div>
@@ -189,12 +187,19 @@ function StreakCard({ streak = 0, longest = 0 }) {
 }
 
 /* ── Stats Row ───────────────────────────────────────────────────── */
-function StatsRow() {
+function StatsRow({ todos, completedTodos }) {
+  const todayActive    = todos.filter(isTodayOrPast);
+  const todayCompleted = completedTodos.filter(t => dayTs(t.createdAt) === todayTs());
+  const otherCompleted = completedTodos.filter(t => dayTs(t.createdAt) !== todayTs());
+
+  const progressDone  = todayCompleted.length + otherCompleted.length;
+  const progressTotal = todayActive.length + todayCompleted.length + otherCompleted.length;
+
   const stats = [
-    { icon: '⏱', val: '4h 20m', label: 'Focus today',   color: '#8b5cf6' },
-    { icon: '✅', val: '2 / 5',  label: 'Tasks done',    color: '#22c55e' },
-    { icon: '⬡',  val: '4',      label: 'Communities',   color: '#06b6d4' },
-    { icon: '📈', val: '+12%',   label: 'vs last week',  color: '#ec4899' },
+    { icon: '⏱', val: '4h 20m',                          label: 'Focus today',  color: '#8b5cf6' },
+    { icon: '✅', val: `${progressDone} / ${progressTotal}`, label: 'Tasks done', color: '#22c55e' },
+    { icon: '⬡',  val: '4',                               label: 'Communities',  color: '#06b6d4' },
+    { icon: '📈', val: '+12%',                            label: 'vs last week', color: '#ec4899' },
   ];
 
   return (
@@ -258,60 +263,208 @@ function CommunitiesPanel({ navigate }) {
 }
 
 /* ── Todo Widget ─────────────────────────────────────────────────── */
-function TodoWidget() {
-  const [todos, setTodos] = useState(MOCK_TODOS);
-  const [input, setInput] = useState('');
+const BLANK_FORM = { title: '', description: '', dueDate: '', originalDueDate: '' };
 
-  const toggle = (id) => setTodos(prev => prev.map(t => t._id === id ? { ...t, done: !t.done } : t));
-  const add = () => {
-    if (!input.trim()) return;
-    setTodos(prev => [...prev, { _id: `t${Date.now()}`, title: input.trim(), done: false }]);
-    setInput('');
+function sortTodos(list) {
+  return [...list].sort((a, b) => {
+    if (a.isCompleted === b.isCompleted) return 0;
+    return a.isCompleted ? 1 : -1;
+  });
+}
+
+function TodoWidget({ todos, setTodos, completedTodos, setCompletedTodos, onComplete }) {
+  const [tab,       setTab]       = useState('today');
+  const [showForm,  setShowForm]  = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form,      setForm]      = useState(BLANK_FORM);
+  const [saving,    setSaving]    = useState(false);
+
+  const today = todayTs();
+
+  // Active todos that belong to "today" (today or past-due)
+  const todayActive    = todos.filter(isTodayOrPast).map(t => ({ ...t, isCompleted: false }));
+  // Completed todos completed today
+  const todayCompleted = completedTodos
+    .filter(t => dayTs(t.createdAt) === today)
+    .map(t => ({ ...t, isCompleted: true }));
+  // All active + completed merged with isCompleted flag
+  const allActive    = todos.map(t => ({ ...t, isCompleted: false }));
+  const allCompleted = completedTodos.map(t => ({ ...t, isCompleted: true }));
+
+  // Progress: today active total + any completed todos (today or others) done today or in other tabs
+  const otherCompleted    = completedTodos.filter(t => dayTs(t.createdAt) !== today);
+  const progressDone      = todayCompleted.length + otherCompleted.length;
+  const progressTotal     = todayActive.length + progressDone;
+
+  const displayList = sortTodos(
+    tab === 'today'     ? [...todayActive, ...todayCompleted] :
+    tab === 'all'       ? [...allActive, ...allCompleted] :
+    /* completed tab */   allCompleted
+  );
+
+  const openAdd = () => { setEditingId(null); setForm(BLANK_FORM); setShowForm(true); };
+  const openEdit = (todo) => {
+    if (todo.isCompleted) return; // can't edit completed todos
+    setEditingId(todo._id);
+    const dueDateStr = todo.dueDate ? new Date(todo.dueDate).toISOString().split('T')[0] : '';
+    setForm({ title: todo.title, description: todo.description || '', dueDate: dueDateStr, originalDueDate: dueDateStr });
+    setShowForm(true);
+  };
+  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(BLANK_FORM); };
+
+  const handleSave = async () => {
+    if (!form.title.trim()) return;
+    setSaving(true);
+    try {
+      const dueDateChanged = form.dueDate !== form.originalDueDate;
+      const body = {
+        title: form.title.trim(),
+        ...(form.description.trim() && { description: form.description.trim() }),
+        ...(form.dueDate && (dueDateChanged || !editingId) && { dueDate: `${form.dueDate}T23:59:00` }),
+      };
+      if (editingId) {
+        await editTodo(editingId, body);
+        setTodos(prev => prev.map(t => t._id === editingId
+          ? { ...t, ...body, dueDate: form.dueDate ? new Date(form.dueDate) : undefined }
+          : t));
+      } else {
+        await addTodo(body);
+        const { data } = await getTodos();
+        setTodos(data);
+      }
+      closeForm();
+    } catch (e) { console.error(e); }
+    setSaving(false);
   };
 
-  const done  = todos.filter(t => t.done).length;
-  const total = todos.length;
+  const handleToggle = async (todo) => {
+    try {
+      await toggleTodo(todo._id);
+      if (!todo.isCompleted) {
+        // Active → Completed: remove from todos, add to completedTodos
+        setTodos(prev => prev.filter(t => t._id !== todo._id));
+        setCompletedTodos(prev => [{ ...todo, isCompleted: true, createdAt: new Date().toISOString() }, ...prev]);
+        await onComplete(); // await so streak card re-renders with fresh DB value
+      } else {
+        // Completed → Active: remove from completedTodos, add to todos
+        setCompletedTodos(prev => prev.filter(t => t._id !== todo._id));
+        setTodos(prev => [{ ...todo, isCompleted: false }, ...prev]);
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleDelete = async (todoId, isCompleted) => {
+    try {
+      await deleteTodo(todoId);
+      if (isCompleted) setCompletedTodos(prev => prev.filter(t => t._id !== todoId));
+      else             setTodos(prev => prev.filter(t => t._id !== todoId));
+    } catch (e) { console.error(e); }
+  };
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const emptyMsg = tab === 'today' ? 'No tasks for today' : tab === 'all' ? 'No tasks yet' : 'No completed tasks';
 
   return (
     <div className="dash-card todo-card">
       <div className="card-header">
-        <span className="card-title">Today's Tasks</span>
-        <span className="todo-progress">{done}/{total}</span>
+        <div className="todo-tabs">
+          <button className={`todo-tab ${tab === 'today'     ? 'active' : ''}`} onClick={() => setTab('today')}>Today</button>
+          <button className={`todo-tab ${tab === 'all'       ? 'active' : ''}`} onClick={() => setTab('all')}>All</button>
+          <button className={`todo-tab ${tab === 'completed' ? 'active' : ''}`} onClick={() => setTab('completed')}>Done</button>
+        </div>
+        <div className="todo-header-right">
+          <span className="todo-progress">{progressDone}/{progressTotal}</span>
+          {tab !== 'completed' && (
+            <button className="todo-add-icon-btn" onClick={showForm && !editingId ? closeForm : openAdd}>
+              <span>{showForm && !editingId ? '✕' : '+'}</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="todo-progress-bar-wrap">
-        <div className="todo-progress-bar" style={{ width: total ? `${(done / total) * 100}%` : '0%' }} />
+        <div className="todo-progress-bar" style={{ width: progressTotal ? `${(progressDone / progressTotal) * 100}%` : '0%' }} />
       </div>
+
+      <AnimatePresence>
+        {showForm && tab !== 'completed' && (
+          <motion.div
+            className="todo-form"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <input
+              className="todo-input"
+              placeholder="Task title *"
+              value={form.title}
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && handleSave()}
+              autoFocus
+            />
+            <textarea
+              className="todo-input todo-textarea"
+              placeholder="Description (optional)"
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              rows={2}
+            />
+            <div className="todo-form-row">
+              <input
+                type="date"
+                className="todo-input todo-date-input"
+                value={form.dueDate}
+                min={todayStr}
+                onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
+              />
+              <button className="todo-save-btn" onClick={handleSave} disabled={saving || !form.title.trim()}>
+                {saving ? '…' : editingId ? 'Save' : 'Add'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="todo-list">
         <AnimatePresence>
-          {todos.map(t => (
-            <motion.div
-              key={t._id}
-              className={`todo-item ${t.done ? 'done' : ''}`}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, height: 0 }}
-              layout
-            >
-              <button className={`todo-check ${t.done ? 'checked' : ''}`} onClick={() => toggle(t._id)}>
-                {t.done && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-              </button>
-              <span className="todo-title">{t.title}</span>
-            </motion.div>
-          ))}
+          {displayList.length === 0 && (
+            <div className="todo-empty">{emptyMsg}</div>
+          )}
+          {displayList.map(t => {
+            const due    = t.dueDate ? new Date(t.dueDate) : null;
+            const dueTs  = due ? dayTs(due) : null;
+            const isPast = dueTs !== null && dueTs < today;
+            return (
+              <motion.div
+                key={t._id}
+                className={`todo-item ${t.isCompleted ? 'done' : ''}`}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, height: 0 }}
+                layout
+              >
+                <button className={`todo-check ${t.isCompleted ? 'checked' : ''}`} onClick={() => handleToggle(t)}>
+                  {t.isCompleted && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                </button>
+                <div className="todo-content">
+                  <span className="todo-title">{t.title}</span>
+                  {due && (
+                    <span className={`todo-due ${isPast && !t.isCompleted ? 'overdue' : ''}`}>
+                      {isPast && !t.isCompleted ? '⚠ ' : '📅 '}
+                      {due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  )}
+                </div>
+                <div className="todo-actions">
+                  {!t.isCompleted && (
+                    <button className="todo-action-btn" onClick={() => openEdit(t)} title="Edit">✎</button>
+                  )}
+                  <button className="todo-action-btn todo-action-delete" onClick={() => handleDelete(t._id, t.isCompleted)} title="Delete">✕</button>
+                </div>
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
-      </div>
-
-      <div className="todo-input-row">
-        <input
-          className="todo-input"
-          placeholder="Add a task…"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && add()}
-        />
-        <button className="todo-add-btn" onClick={add}>+</button>
       </div>
     </div>
   );
@@ -321,13 +474,15 @@ function TodoWidget() {
 export default function Dashboard() {
   const navigate  = useNavigate();
   const [active, setActive] = useState('/dashboard');
-  const [user, setUser]     = useState(null);
+  const [user,           setUser]           = useState(null);
+  const [todos,          setTodos]          = useState([]);
+  const [completedTodos, setCompletedTodos] = useState([]);
 
-  useEffect(() => {
-    getUserProfile()
-      .then(({ userMetadata }) => setUser(userMetadata))
-      .catch(console.error);
-  }, []);
+  const fetchUser           = useCallback(() => getUserProfile().then(({ userMetadata }) => setUser(userMetadata)).catch(console.error), []);
+  const fetchTodos          = useCallback(() => getTodos().then(({ data }) => setTodos(data)).catch(console.error), []);
+  const fetchCompletedTodos = useCallback(() => getCompletedTodos().then(({ data }) => setCompletedTodos(data)).catch(console.error), []);
+
+  useEffect(() => { fetchUser(); fetchTodos(); fetchCompletedTodos(); }, [fetchUser, fetchTodos, fetchCompletedTodos]);
 
   return (
     <div className="dash-root">
@@ -392,21 +547,21 @@ export default function Dashboard() {
         </header>
 
         {/* Stats */}
-        <StatsRow />
+        <StatsRow todos={todos} completedTodos={completedTodos} />
 
         {/* Main grid */}
         <div className="dash-grid">
 
           {/* Left column */}
-          <div className="dash-col-left">
-            <PomodoroTimer />
-            <StreakCard streak={user?.streakCount ?? 0} longest={user?.maxStreakCount ?? 0} />
+          <div className="dash-col-right">
+            <TodoWidget todos={todos} setTodos={setTodos} completedTodos={completedTodos} setCompletedTodos={setCompletedTodos} onComplete={fetchUser} />
+            <CommunitiesPanel navigate={navigate} />
           </div>
 
           {/* Right column */}
-          <div className="dash-col-right">
-            <TodoWidget />
-            <CommunitiesPanel navigate={navigate} />
+          <div className="dash-col-left">
+            <PomodoroTimer />
+            <StreakCard streak={user?.streakCount ?? 0} longest={user?.maxStreakCount ?? 0} />
           </div>
 
         </div>
