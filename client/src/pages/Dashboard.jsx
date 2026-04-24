@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import AICoach from '../components/AICoach/AICoach.jsx';
+import AppSidebar from '../components/AppSidebar/AppSidebar.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { getUserProfile, getTodos, getCompletedTodos, addTodo, editTodo, deleteTodo, toggleTodo } from '../api/userApi.js';
@@ -473,7 +474,6 @@ function TodoWidget({ todos, setTodos, completedTodos, setCompletedTodos, onComp
 /* ── Main Dashboard ──────────────────────────────────────────────── */
 export default function Dashboard() {
   const navigate  = useNavigate();
-  const [active, setActive] = useState('/dashboard');
   const [user,           setUser]           = useState(null);
   const [todos,          setTodos]          = useState([]);
   const [completedTodos, setCompletedTodos] = useState([]);
@@ -492,39 +492,7 @@ export default function Dashboard() {
       <div className="dash-orb dash-orb-2" />
 
       {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside className="dash-sidebar">
-        <div className="dash-logo">
-          <div className="dash-logo-icon">L</div>
-          <span className="dash-logo-text">Lumora</span>
-        </div>
-
-        <nav className="dash-nav">
-          {NAV_ITEMS.map(item => (
-            <button
-              key={item.path}
-              className={`dash-nav-item ${active === item.path ? 'active' : ''}`}
-              onClick={() => { setActive(item.path); navigate(item.path); }}
-            >
-              <span className="dash-nav-icon">{item.icon}</span>
-              <span className="dash-nav-label">{item.label}</span>
-              {active === item.path && <motion.div className="dash-nav-indicator" layoutId="navIndicator" />}
-            </button>
-          ))}
-        </nav>
-
-        <div className="dash-sidebar-bottom">
-          <div className="dash-user-card">
-            <div className="dash-user-avatar">
-              {user ? getInitials(user.profile?.fullName || user.userId?.username || '?') : '…'}
-            </div>
-            <div className="dash-user-info">
-              <span className="dash-user-name">{user?.userId?.username ?? '—'}</span>
-              <span className="dash-user-role">{user?.userId?.role ?? '—'}</span>
-            </div>
-            <button className="dash-user-menu">⋯</button>
-          </div>
-        </div>
-      </aside>
+      <AppSidebar />
 
       {/* ── Main Content ────────────────────────────────────────── */}
       <main className="dash-main">

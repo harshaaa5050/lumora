@@ -1,12 +1,23 @@
 import CommunityReport from "../models/AdminDB/CommunityReport.js";
 import UserReport from "../models/AdminDB/UserReport.js";
 import UserMetadata from "../models/UserDB/UserMetadata.js";
+import Community from "../models/CommunityDB/Community.js";
 import { findCommunity } from "./communityServices.js"
 
 export const fetchUserProfile = async (userId) => {
 	const userMetadata = await UserMetadata.findOne({ userId }).populate("userId", "username email role");
 	if (!userMetadata) throw new Error("User profile not found");
 	return userMetadata;
+};
+
+export const fetchJoinedCommunities = async (userId) => {
+	const userMetadata = await UserMetadata.findOne({ userId }, "joinedCommunities");
+	if (!userMetadata) throw new Error("User profile not found");
+	const communities = await Community.find(
+		{ _id: { $in: userMetadata.joinedCommunities } },
+		"communityName communityTag members"
+	);
+	return communities;
 };
 
 // Report a user

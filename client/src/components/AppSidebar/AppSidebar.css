@@ -1,0 +1,4 @@
+/* Re-exports the dash-sidebar styles from Dashboard.css.
+   All .dash-* classes are defined there — import Dashboard.css wherever AppSidebar is used,
+   or import it here so the component is self-contained. */
+@import '../../pages/Dashboard.css';

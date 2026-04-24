@@ -1,4 +1,14 @@
-import { addUserToCommunity, addUserWithInviteCode, createNewCommunity, removeUserFromMembers } from "../services/communityServices.js";
+import { addUserToCommunity, addUserWithInviteCode, createNewCommunity, fetchCommunityDetails, removeUserFromMembers } from "../services/communityServices.js";
+
+export const getCommunityDetails = async (req, res) => {
+	try {
+		const { communityId } = req.params;
+		const community = await fetchCommunityDetails(communityId);
+		res.status(200).json({ success: true, community });
+	} catch (error) {
+		res.status(500).json({ success: false, error: error.message });
+	}
+};
 
 // Create a new community
 export const createCommunity = async (req, res) => {

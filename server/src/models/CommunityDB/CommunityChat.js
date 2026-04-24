@@ -16,6 +16,10 @@ const communityChatSchema = new mongoose.Schema(
 			ref: "User",
 			required: true,
 		},
+		senderUsername: {
+			type: String,
+			required: true,
+		},
 		content: {
 			type: String,
 			required: true,
