@@ -20,6 +20,14 @@ export const fetchJoinedCommunities = async (userId) => {
 	return communities;
 };
 
+export const fetchPublicCommunities = async () => {
+	const communities = await Community.find(
+		{ isPrivate: false },
+		"communityName communityTag members description membershipMode"
+	);
+	return communities;
+};
+
 // Report a user
 export const reportUserFromCommunity = async (userId, communityId, reportedUserId, reasonType, reason) => {
     if(userId.toString() === reportedUserId.toString()) throw new Error("You cannot report yourself");

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import CommunityChat from '../components/Chat/CommunityChat.jsx';
 import AppSidebar from '../components/AppSidebar/AppSidebar.jsx';
@@ -32,12 +32,21 @@ export default function CommunityPage() {
       .finally(() => setLoadingCommunity(false));
   }, [selectedId]);
 
+  const [sidebarKey, setSidebarKey] = useState(0);
+
+  const handleLeave = useCallback(() => {
+    setSelectedId(null);
+    setActiveCommunity(null);
+    setSidebarKey(k => k + 1);
+  }, []);
+
   const loading = loadingCommunity || (!!activeCommunity && !currentUser);
   const ready   = !loading && currentUser && activeCommunity;
 
   return (
     <div className="community-page">
       <AppSidebar
+        key={sidebarKey}
         selectedCommunityId={selectedId}
         onCommunitySelect={setSelectedId}
       />
@@ -54,6 +63,7 @@ export default function CommunityPage() {
             key={activeCommunity._id}
             community={activeCommunity}
             currentUser={currentUser}
+            onLeave={handleLeave}
           />
         )}
 

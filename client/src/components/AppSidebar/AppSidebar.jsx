@@ -7,7 +7,7 @@ import '../../pages/Dashboard.css';
 const getInitials = (name = '') =>
   name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
-export default function AppSidebar({ selectedCommunityId, onCommunitySelect }) {
+export default function AppSidebar({ selectedCommunityId, onCommunitySelect, onExplore }) {
   const navigate = useNavigate();
   const [user,              setUser]              = useState(null);
   const [joinedCommunities, setJoinedCommunities] = useState([]);
@@ -71,6 +71,18 @@ export default function AppSidebar({ selectedCommunityId, onCommunitySelect }) {
             );
           })}
         </div>
+      </div>
+
+      <div className="dash-sb-explore-wrap">
+        <motion.button
+          className="dash-sb-explore-btn"
+          onClick={onExplore ?? (() => navigate('/community'))}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+        >
+          <span className="dash-sb-explore-icon">⬡</span>
+          Explore Communities
+        </motion.button>
       </div>
 
       <div className="dash-sidebar-bottom">

@@ -1,4 +1,4 @@
-import { fetchUserProfile, fetchJoinedCommunities, reportACommunity, reportUserFromCommunity } from "../services/userServices.js";
+import { fetchUserProfile, fetchJoinedCommunities, fetchPublicCommunities, reportACommunity, reportUserFromCommunity } from "../services/userServices.js";
 
 export const getUserProfile = async (req, res) => {
 	try {
@@ -14,6 +14,15 @@ export const getJoinedCommunities = async (req, res) => {
 	try {
 		const { userId } = req.auth;
 		const communities = await fetchJoinedCommunities(userId);
+		res.status(200).json({ success: true, communities });
+	} catch (error) {
+		res.status(500).json({ success: false, error: error.message });
+	}
+};
+
+export const getPublicCommunities = async (req, res) => {
+	try {
+		const communities = await fetchPublicCommunities();
 		res.status(200).json({ success: true, communities });
 	} catch (error) {
 		res.status(500).json({ success: false, error: error.message });

@@ -42,7 +42,7 @@ export const login = async (req, res) => {
 			sameSite: "strict",
 		});
 
-		res.status(201).json({
+		res.status(200).json({
 			success: true,
 			data: {
 				username: user.username,
@@ -64,7 +64,6 @@ export const logout = async (req, res) => {
 	try {
 		// remove cookie
 		res.clearCookie("token");
-		res.end(); // Concludes the response
 		res.status(200).json({ success: true, message: "Logged out successfully" });
 	} catch (error) {
 		res.status(500).json({ success: false, error: error.message });

@@ -3,7 +3,8 @@ import AICoach from '../components/AICoach/AICoach.jsx';
 import AppSidebar from '../components/AppSidebar/AppSidebar.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { getUserProfile, getTodos, getCompletedTodos, addTodo, editTodo, deleteTodo, toggleTodo } from '../api/userApi.js';
+import { getUserProfile, getTodos, getCompletedTodos, addTodo, editTodo, deleteTodo, toggleTodo, getJoinedCommunities, getPublicCommunities } from '../api/userApi.js';
+import { joinCommunity } from '../api/communityApi.js';
 import './Dashboard.css';
 
 /* ── Date helpers ────────────────────────────────────────────────── */
@@ -11,12 +12,8 @@ const todayTs = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.g
 const dayTs   = (v)  => { const d = new Date(v); d.setHours(0, 0, 0, 0); return d.getTime(); };
 const isTodayOrPast = (todo) => !!todo.dueDate && dayTs(todo.dueDate) <= todayTs();
 
-const MOCK_COMMUNITIES = [
-  { _id: '1', communityName: 'Lumora Design',    communityTag: 'design',   members: 142, online: 8,  lastMsg: '2m ago',  color: '#8b5cf6' },
-  { _id: '2', communityName: 'Deep Work Club',   communityTag: 'deepwork', members: 89,  online: 12, lastMsg: '15m ago', color: '#ec4899' },
-  { _id: '3', communityName: 'Builders Hub',     communityTag: 'builders', members: 230, online: 5,  lastMsg: '1h ago',  color: '#06b6d4' },
-  { _id: '4', communityName: 'Study Together',   communityTag: 'study',    members: 67,  online: 3,  lastMsg: '3h ago',  color: '#22c55e' },
-];
+const COMMUNITY_COLORS = ['#8b5cf6', '#ec4899', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444'];
+const communityColor = (id) => COMMUNITY_COLORS[(id?.charCodeAt(id.length - 1) ?? 0) % COMMUNITY_COLORS.length];
 
 const MOCK_STREAK_WEEK = [true, true, true, false, true, true, true]; // Sun–Sat
 
@@ -188,7 +185,7 @@ function StreakCard({ streak = 0, longest = 0 }) {
 }
 
 /* ── Stats Row ───────────────────────────────────────────────────── */
-function StatsRow({ todos, completedTodos }) {
+function StatsRow({ todos, completedTodos, communityCount }) {
   const todayActive    = todos.filter(isTodayOrPast);
   const todayCompleted = completedTodos.filter(t => dayTs(t.createdAt) === todayTs());
   const otherCompleted = completedTodos.filter(t => dayTs(t.createdAt) !== todayTs());
@@ -197,10 +194,10 @@ function StatsRow({ todos, completedTodos }) {
   const progressTotal = todayActive.length + todayCompleted.length + otherCompleted.length;
 
   const stats = [
-    { icon: '⏱', val: '4h 20m',                          label: 'Focus today',  color: '#8b5cf6' },
-    { icon: '✅', val: `${progressDone} / ${progressTotal}`, label: 'Tasks done', color: '#22c55e' },
-    { icon: '⬡',  val: '4',                               label: 'Communities',  color: '#06b6d4' },
-    { icon: '📈', val: '+12%',                            label: 'vs last week', color: '#ec4899' },
+    { icon: '⏱', val: '4h 20m',                             label: 'Focus today',  color: '#8b5cf6' },
+    { icon: '✅', val: `${progressDone} / ${progressTotal}`, label: 'Tasks done',   color: '#22c55e' },
+    { icon: '⬡', val: String(communityCount),               label: 'Communities',  color: '#06b6d4' },
+    { icon: '📈', val: '+12%',                               label: 'vs last week', color: '#ec4899' },
   ];
 
   return (
@@ -223,42 +220,155 @@ function StatsRow({ todos, completedTodos }) {
   );
 }
 
+/* ── Explore Communities Modal ───────────────────────────────────── */
+function ExploreModal({ onClose, joinedIds, onJoined }) {
+  const [communities, setCommunities] = useState([]);
+  const [joining,     setJoining]     = useState(null);
+  const [joined,      setJoined]      = useState(new Set(joinedIds));
+
+  useEffect(() => {
+    getPublicCommunities()
+      .then(({ communities }) => setCommunities(communities))
+      .catch(console.error);
+  }, []);
+
+  const handleJoin = async (c) => {
+    setJoining(c._id);
+    try {
+      await joinCommunity(c._id);
+      setJoined(prev => new Set([...prev, c._id]));
+      onJoined();
+    } catch (e) { console.error(e); }
+    setJoining(null);
+  };
+
+  return (
+    <motion.div
+      className="explore-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="explore-modal"
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 24, scale: 0.97 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="explore-modal-header">
+          <div>
+            <span className="explore-modal-title">Explore Communities</span>
+            <span className="explore-modal-sub">{communities.length} public communities</span>
+          </div>
+          <button className="explore-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="explore-modal-list">
+          {communities.length === 0 && (
+            <div className="explore-empty">No public communities yet</div>
+          )}
+          {communities.map((c, i) => {
+            const color    = communityColor(c._id);
+            const isMember = joined.has(c._id);
+            return (
+              <motion.div
+                key={c._id}
+                className="explore-community-row"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04 }}
+              >
+                <div className="community-avatar" style={{ background: `linear-gradient(135deg, ${color}cc, ${color}66)`, color }}>
+                  {getInitials(c.communityName)}
+                </div>
+                <div className="community-info" style={{ flex: 1 }}>
+                  <span className="community-name">{c.communityName}</span>
+                  <span className="community-tag">#{c.communityTag}</span>
+                  {c.description && <span className="explore-community-desc">{c.description}</span>}
+                </div>
+                <div className="explore-community-right">
+                  <span className="explore-member-count">{c.members?.length ?? 0} members</span>
+                  <span className="explore-mode-badge">{c.membershipMode === 'open' ? 'Open' : 'Request'}</span>
+                  <motion.button
+                    className={`explore-join-btn ${isMember ? 'joined' : ''}`}
+                    disabled={isMember || joining === c._id}
+                    onClick={() => handleJoin(c)}
+                    whileHover={!isMember ? { scale: 1.04 } : {}}
+                    whileTap={!isMember ? { scale: 0.96 } : {}}
+                  >
+                    {joining === c._id ? '…' : isMember ? 'Joined' : 'Join'}
+                  </motion.button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 /* ── Communities Panel ───────────────────────────────────────────── */
-function CommunitiesPanel({ navigate }) {
+function CommunitiesPanel({ navigate, communities, onExplore }) {
+  const [showAll, setShowAll] = useState(false);
+  const preview  = showAll ? communities : communities.slice(0, 3);
+
   return (
     <div className="dash-card communities-card">
       <div className="card-header">
         <span className="card-title">Your Communities</span>
-        <button className="card-action-btn" onClick={() => navigate('/community')}>View all →</button>
+        {communities.length > 3 && (
+          <button className="card-action-btn" onClick={() => setShowAll(v => !v)}>
+            {showAll ? 'Show less' : `View all (${communities.length}) →`}
+          </button>
+        )}
       </div>
       <div className="communities-list">
-        {MOCK_COMMUNITIES.map((c, i) => (
-          <motion.div
-            key={c._id}
-            className="community-row"
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.06 }}
-            whileHover={{ x: 4 }}
-            onClick={() => navigate('/community')}
-          >
-            <div className="community-avatar" style={{ background: `linear-gradient(135deg, ${c.color}cc, ${c.color}66)`, color: c.color }}>
-              {getInitials(c.communityName)}
-            </div>
-            <div className="community-info">
-              <span className="community-name">{c.communityName}</span>
-              <span className="community-tag">#{c.communityTag}</span>
-            </div>
-            <div className="community-stats">
-              <span className="community-online">
-                <span className="online-dot" />
-                {c.online}
-              </span>
-              <span className="community-time">{c.lastMsg}</span>
-            </div>
-          </motion.div>
-        ))}
+        {communities.length === 0 && (
+          <div className="todo-empty">You haven't joined any communities yet</div>
+        )}
+        <AnimatePresence initial={false}>
+          {preview.map((c, i) => {
+            const color = communityColor(c._id);
+            return (
+              <motion.div
+                key={c._id}
+                className="community-row"
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ delay: i * 0.04 }}
+                whileHover={{ x: 4 }}
+                onClick={() => navigate('/community', { state: { communityId: c._id } })}
+              >
+                <div className="community-avatar" style={{ background: `linear-gradient(135deg, ${color}cc, ${color}66)`, color }}>
+                  {getInitials(c.communityName)}
+                </div>
+                <div className="community-info">
+                  <span className="community-name">{c.communityName}</span>
+                  <span className="community-tag">#{c.communityTag}</span>
+                </div>
+                <div className="community-stats">
+                  <span className="community-online">
+                    <span className="online-dot" />
+                    {c.members?.length ?? 0}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
+      <motion.button
+        className="explore-communities-btn"
+        onClick={onExplore}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.97 }}
+      >
+        <span>⬡</span> Explore Communities
+      </motion.button>
     </div>
   );
 }
@@ -477,12 +587,15 @@ export default function Dashboard() {
   const [user,           setUser]           = useState(null);
   const [todos,          setTodos]          = useState([]);
   const [completedTodos, setCompletedTodos] = useState([]);
+  const [communities,    setCommunities]    = useState([]);
+  const [showExplore,    setShowExplore]    = useState(false);
 
   const fetchUser           = useCallback(() => getUserProfile().then(({ userMetadata }) => setUser(userMetadata)).catch(console.error), []);
   const fetchTodos          = useCallback(() => getTodos().then(({ data }) => setTodos(data)).catch(console.error), []);
   const fetchCompletedTodos = useCallback(() => getCompletedTodos().then(({ data }) => setCompletedTodos(data)).catch(console.error), []);
+  const fetchCommunities    = useCallback(() => getJoinedCommunities().then(({ communities }) => setCommunities(communities)).catch(console.error), []);
 
-  useEffect(() => { fetchUser(); fetchTodos(); fetchCompletedTodos(); }, [fetchUser, fetchTodos, fetchCompletedTodos]);
+  useEffect(() => { fetchUser(); fetchTodos(); fetchCompletedTodos(); fetchCommunities(); }, [fetchUser, fetchTodos, fetchCompletedTodos, fetchCommunities]);
 
   return (
     <div className="dash-root">
@@ -492,7 +605,7 @@ export default function Dashboard() {
       <div className="dash-orb dash-orb-2" />
 
       {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <AppSidebar />
+      <AppSidebar onExplore={() => setShowExplore(true)} />
 
       {/* ── Main Content ────────────────────────────────────────── */}
       <main className="dash-main">
@@ -515,7 +628,7 @@ export default function Dashboard() {
         </header>
 
         {/* Stats */}
-        <StatsRow todos={todos} completedTodos={completedTodos} />
+        <StatsRow todos={todos} completedTodos={completedTodos} communityCount={communities.length} />
 
         {/* Main grid */}
         <div className="dash-grid">
@@ -523,7 +636,7 @@ export default function Dashboard() {
           {/* Left column */}
           <div className="dash-col-right">
             <TodoWidget todos={todos} setTodos={setTodos} completedTodos={completedTodos} setCompletedTodos={setCompletedTodos} onComplete={fetchUser} />
-            <CommunitiesPanel navigate={navigate} />
+            <CommunitiesPanel navigate={navigate} communities={communities} onExplore={() => setShowExplore(true)} />
           </div>
 
           {/* Right column */}
@@ -534,6 +647,17 @@ export default function Dashboard() {
 
         </div>
       </main>
+
+      {/* ── Explore Communities Modal ────────────────────────────── */}
+      <AnimatePresence>
+        {showExplore && (
+          <ExploreModal
+            onClose={() => setShowExplore(false)}
+            joinedIds={communities.map(c => c._id)}
+            onJoined={fetchCommunities}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

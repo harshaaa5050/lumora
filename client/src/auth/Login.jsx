@@ -38,7 +38,7 @@ export default function Login() {
       });
       const data = await res.json();
       if (res.ok) {
-        navigate("/");
+        navigate("/dashboard");
       } else if (data.errors) {
         const se = {};
         data.errors.forEach(e => { se[e.path] = e.msg; });

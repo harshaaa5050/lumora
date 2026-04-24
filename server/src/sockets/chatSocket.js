@@ -28,6 +28,7 @@ export function registerChatSocket(io) {
 						...m,
 						senderId: { _id: m.senderId.toString(), username: m.senderUsername || "Unknown" },
 						replyTo: m.replyTo?.toString() ?? null,
+						attachments: m.attachments ?? [],
 					}));
 
 					socket.emit("message-history", messages);
@@ -39,16 +40,17 @@ export function registerChatSocket(io) {
 			}
 		});
 
-		socket.on("send-message", async ({ communityId, content, messageType = "text", replyTo }) => {
+		socket.on("send-message", async ({ communityId, content, messageType = "text", replyTo, attachments = [] }) => {
 			const { userId, username } = socket.data;
-			if (!content?.trim()) return;
+			const text = content?.trim() ?? "";
+			if (!text && attachments.length === 0) return;
 
 			const outbound = {
 				_id: new mongoose.Types.ObjectId().toString(),
 				senderId: { _id: userId, username },
-				content: content.trim(),
+				content: text,
 				messageType,
-				attachments: [],
+				attachments,
 				replyTo: replyTo ?? null,
 				isEdited: false,
 				isDeleted: false,
@@ -62,8 +64,9 @@ export function registerChatSocket(io) {
 						communityId,
 						senderId: userId,
 						senderUsername: username,
-						content: content.trim(),
+						content: text,
 						messageType,
+						attachments,
 						replyTo: isValidId(replyTo) ? replyTo : undefined,
 					});
 					outbound._id = saved._id.toString();
@@ -74,7 +77,7 @@ export function registerChatSocket(io) {
 			}
 
 			// Broadcast to everyone else — sender adds it locally
-		socket.to(`chat:${communityId}`).emit("new-message", outbound);
+			socket.to(`chat:${communityId}`).emit("new-message", outbound);
 		});
 
 		socket.on("typing", ({ communityId }) => {

@@ -38,3 +38,6 @@ export const toggleTodo = (todoId) =>
 
 export const getJoinedCommunities = () =>
 	handle(axios.get(`${BASE}/user/communities`, { withCredentials: true, headers: headers() }));
+
+export const getPublicCommunities = () =>
+	handle(axios.get(`${BASE}/user/public-communities`, { withCredentials: true, headers: headers() }));
