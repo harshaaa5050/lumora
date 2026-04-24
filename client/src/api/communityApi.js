@@ -9,7 +9,7 @@ const handle = async (request) => {
 		const { data } = await request;
 		return data;
 	} catch (error) {
-		throw new Error(error.response?.data?.message || error.message || "Request failed");
+		throw new Error(error.response?.data?.error || error.response?.data?.message || error.message || "Request failed");
 	}
 };
 

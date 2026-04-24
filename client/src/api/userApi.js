@@ -41,3 +41,9 @@ export const getJoinedCommunities = () =>
 
 export const getPublicCommunities = () =>
 	handle(axios.get(`${BASE}/user/public-communities`, { withCredentials: true, headers: headers() }));
+
+export const logFocusSession = (duration) =>
+	handle(axios.post(`${BASE}/user/timer/log`, { duration }, { withCredentials: true, headers: headers() }));
+
+export const getTodayFocus = () =>
+	handle(axios.get(`${BASE}/user/timer/today`, { withCredentials: true, headers: headers() }));

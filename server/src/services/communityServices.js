@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Community from "../models/CommunityDB/Community.js";
 import User from "../models/UserDB/User.js";
 import UserMetadata from "../models/UserDB/UserMetadata.js";
@@ -129,20 +130,23 @@ export const removeUserFromMembers = async (userId, communityId) => {
 	const community = await findCommunity(communityId);
 
 	if (community.communityAdmin.toString() === userId)
-		// checks if user is the community admin
 		throw new Error("Admin cannot leave the community before transfering the community admin role");
 
-	if (!community.members.some((id) => id.toString() === userId.toString()))
-		// checks if the user is a member
-		throw new Error("User is not a member of the community");
+	const isMember = community.members.some((id) => id.toString() === userId.toString());
 
-	community.members = community.members.filter((id) => id.toString() !== userId.toString()); //filter out the user from members
+	if (isMember) {
+		community.members = community.members.filter((id) => id.toString() !== userId.toString());
+		community.moderators = community.moderators.filter((id) => id.toString() !== userId.toString());
 
-	community.moderators = community.moderators.filter((id) => id.toString() !== userId.toString()); //filter out the user from moderators if they are
+		if (!community.previousMembers.some((id) => id.toString() === userId.toString()))
+			community.previousMembers.push(userId);
 
-	if (!community.previousMembers.some((id) => id.toString() === userId.toString()))
-		//adds the userId to previous member list if doesn't exist
-		community.previousMembers.push(userId);
+		await community.save();
+	}
 
-	await community.save();
+	// Always clean up joinedCommunities regardless of members array state
+	await UserMetadata.findOneAndUpdate(
+		{ userId: new mongoose.Types.ObjectId(userId) },
+		{ $pull: { joinedCommunities: new mongoose.Types.ObjectId(communityId) } }
+	);
 };
