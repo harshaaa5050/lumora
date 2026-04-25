@@ -50,6 +50,18 @@ const isImageUrl = (url = '') =>
 const resolveUrl = (url) =>
   url?.startsWith('http') ? url : `${BASE_URL.replace('/api', '')}${url}`;
 
+const NON_MEDIA_FILE_ACCEPT =
+  '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.csv,.zip,.rar,.7z,.tar,.gz,.json,.xml,.md,.fig,.sketch,.psd,.ai,.eps,.js,.jsx,.ts,.tsx,.css,.scss,.sass,.html,.htm';
+
+const getFileCategory = (file) => {
+  const mimeType = file?.type || '';
+
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'audio';
+  return 'file';
+};
+
 /* ── Sub-components ──────────────────────────────────────────────── */
 const Avatar = ({ userId, name, size = 34, className = '' }) => (
   <div
@@ -533,7 +545,8 @@ export default function CommunityChat({ community, currentUser, onLeave }) {
   const [videoSession,  setVideoSession]  = useState(null);
   const [showDetails,   setShowDetails]   = useState(false);
   const [uploading,     setUploading]     = useState(false);
-  const [attachAccept,  setAttachAccept]  = useState('*');
+  const [attachAccept,  setAttachAccept]  = useState('');
+  const [attachType,    setAttachType]    = useState('file');
 
   const messagesEndRef = useRef(null);
   const inputRef       = useRef(null);
@@ -626,16 +639,33 @@ export default function CommunityChat({ community, currentUser, onLeave }) {
   }, [handleSend]);
 
   /* ── File upload ─────────────────────────────────────────────── */
-  const triggerFileInput = (accept) => {
+  const triggerFileInput = (accept, type) => {
     setAttachAccept(accept);
+    setAttachType(type);
     setShowAttach(false);
-    setTimeout(() => fileInputRef.current?.click(), 0);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.accept = accept;
+      fileInputRef.current.click();
+    }
   };
 
   const handleFileSelect = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
+
+    const fileCategory = getFileCategory(file);
+    if (attachType === 'file' && fileCategory !== 'file') {
+      console.warn(`Blocked ${fileCategory} upload from file-only picker.`);
+      return;
+    }
+
+    if (attachType !== 'file' && fileCategory !== attachType) {
+      console.warn(`Blocked ${fileCategory || 'unknown'} upload from ${attachType} picker.`);
+      return;
+    }
 
     setUploading(true);
     try {
@@ -680,9 +710,10 @@ export default function CommunityChat({ community, currentUser, onLeave }) {
       setReplyingTo(null);
     } catch (err) {
       console.error('Upload error:', err);
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
-  }, [communityId, currentUser, replyingTo]);
+  }, [attachType, communityId, currentUser, replyingTo]);
 
   const handleEmojiClick = useCallback((emoji) => {
     setInputText(prev => prev + emoji);
@@ -699,10 +730,10 @@ export default function CommunityChat({ community, currentUser, onLeave }) {
   }, []);
 
   const ATTACH_OPTIONS = [
-    { icon: '🖼️', label: 'Image', accept: 'image/*' },
-    { icon: '🎬', label: 'Video', accept: 'video/*' },
-    { icon: '🎵', label: 'Audio', accept: 'audio/*' },
-    { icon: '📎', label: 'File',  accept: '*' },
+    { icon: '🖼️', label: 'Image', accept: 'image/*', type: 'image' },
+    { icon: '🎬', label: 'Video', accept: 'video/*', type: 'video' },
+    { icon: '🎵', label: 'Audio', accept: 'audio/*', type: 'audio' },
+    { icon: '📎', label: 'File',  accept: NON_MEDIA_FILE_ACCEPT, type: 'file' },
   ];
 
   return (
@@ -849,7 +880,7 @@ export default function CommunityChat({ community, currentUser, onLeave }) {
                       <button
                         key={opt.label}
                         className="attach-option"
-                        onClick={() => triggerFileInput(opt.accept)}
+                        onClick={() => triggerFileInput(opt.accept, opt.type)}
                       >
                         <span className="attach-option-icon">{opt.icon}</span>
                         {opt.label}
