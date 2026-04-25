@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { getUserProfile, getTodos, getCompletedTodos, addTodo, editTodo, deleteTodo, toggleTodo, getJoinedCommunities, getPublicCommunities } from '../api/userApi.js';
 import { joinCommunity } from '../api/communityApi.js';
+import CreateCommunityModal from '../components/CreateCommunityModal/CreateCommunityModal.jsx';
 import { useTimer, POMO_MODE_DEFS } from '../context/TimerContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import './Dashboard.css';
@@ -629,6 +630,7 @@ export default function Dashboard() {
   const [completedTodos, setCompletedTodos] = useState([]);
   const [communities,    setCommunities]    = useState([]);
   const [showExplore,    setShowExplore]    = useState(false);
+  const [showCreate,     setShowCreate]     = useState(false);
   const [sidebarOpen,    setSidebarOpen]    = useState(false);
   const [showTaskCompletePopup, setShowTaskCompletePopup] = useState(false);
 
@@ -653,6 +655,7 @@ export default function Dashboard() {
       {/* ── Sidebar ─────────────────────────────────────────────── */}
       <AppSidebar
         onExplore={() => { setShowExplore(true); setSidebarOpen(false); }}
+        onCreate={() => { setShowCreate(true); setSidebarOpen(false); }}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -713,6 +716,12 @@ export default function Dashboard() {
             onClose={() => setShowExplore(false)}
             joinedIds={communities.map(c => c._id)}
             onJoined={fetchCommunities}
+          />
+        )}
+        {showCreate && (
+          <CreateCommunityModal
+            onClose={() => setShowCreate(false)}
+            onCreated={fetchCommunities}
           />
         )}
       </AnimatePresence>

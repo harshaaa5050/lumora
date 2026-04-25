@@ -31,3 +31,6 @@ export const leaveCommunity = (communityId) =>
 
 export const reportCommunity = (communityId, reasonType, reason) =>
 	handle(axios.post(`${BASE}/report/${communityId}`, { reasonType, reason }, { withCredentials: true, headers: headers() }));
+
+export const createCommunity = (data) =>
+	handle(axios.post(`${BASE}/create`, data, { withCredentials: true, headers: headers() }));

@@ -5,6 +5,7 @@ import CommunityChat from '../components/Chat/CommunityChat.jsx';
 import AppSidebar from '../components/AppSidebar/AppSidebar.jsx';
 import { getUserProfile, getPublicCommunities } from '../api/userApi.js';
 import { getCommunity, joinCommunity } from '../api/communityApi.js';
+import CreateCommunityModal from '../components/CreateCommunityModal/CreateCommunityModal.jsx';
 import './CommunityPage.css';
 
 const COMMUNITY_COLORS = ['#8b5cf6', '#ec4899', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444'];
@@ -128,6 +129,7 @@ export default function CommunityPage() {
 
   const [sidebarKey,   setSidebarKey]   = useState(0);
   const [showExplore,  setShowExplore]  = useState(false);
+  const [showCreate,   setShowCreate]   = useState(false);
 
   const handleLeave = useCallback(() => {
     setSelectedId(null);
@@ -145,6 +147,7 @@ export default function CommunityPage() {
         selectedCommunityId={selectedId}
         onCommunitySelect={setSelectedId}
         onExplore={() => setShowExplore(true)}
+        onCreate={() => setShowCreate(true)}
       />
 
       <div className="cp-chat-area">
@@ -175,6 +178,12 @@ export default function CommunityPage() {
           <ExploreModal
             onClose={() => setShowExplore(false)}
             onJoined={() => setSidebarKey(k => k + 1)}
+          />
+        )}
+        {showCreate && (
+          <CreateCommunityModal
+            onClose={() => setShowCreate(false)}
+            onCreated={() => setSidebarKey(k => k + 1)}
           />
         )}
       </AnimatePresence>
