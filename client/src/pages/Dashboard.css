@@ -427,7 +427,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
   box-sizing: border-box;
 }
@@ -437,6 +437,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
 }
 
@@ -444,6 +446,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .pomo-title {
@@ -493,18 +498,21 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-sizing: border-box;
 }
 
 .pomo-customize-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
 }
 
 .pomo-customize-label {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
+  min-width: 0;
 }
 
 .pomo-customize-input-wrap {
@@ -514,7 +522,8 @@
 }
 
 .pomo-customize-input {
-  width: 56px;
+  width: 64px;
+  min-width: 0;
   padding: 5px 8px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
@@ -1343,7 +1352,6 @@
   .communities-card { display: none; }
 
   /* Pomo card must not overflow */
-  .pomo-card { overflow: hidden; }
   .pomo-ring-wrap { width: 160px; height: 160px; }
   .pomo-time { font-size: 28px; }
 
@@ -1393,4 +1401,10 @@
   .pomo-time { font-size: 24px; }
   .pomo-mode-btn { font-size: 10px; padding: 6px 2px; }
   .pomo-sessions { font-size: 11px; padding: 2px 7px; }
+  .pomo-header-right { width: 100%; margin-left: 0; justify-content: space-between; }
+  .pomo-customize-panel { padding: 12px; }
+  .pomo-customize-row { grid-template-columns: 1fr; gap: 6px; }
+  .pomo-customize-input-wrap { justify-content: space-between; }
+  .pomo-customize-input { width: 100%; max-width: 88px; }
+  .pomo-customize-save { align-self: stretch; }
 }
