@@ -354,6 +354,49 @@ function CommunitiesPanel({ navigate, communities, onExplore }) {
 }
 
 /* ── Todo Widget ─────────────────────────────────────────────────── */
+function TaskCompletePopup({ onClose }) {
+  const popperColors = ['#8b5cf6', '#ec4899', '#f59e0b', '#22c55e', '#38bdf8', '#f97316'];
+
+  return (
+    <motion.div
+      className="task-complete-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="task-complete-popup"
+        initial={{ opacity: 0, scale: 0.88, y: 18 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 10 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <button className="task-complete-close" onClick={onClose} aria-label="Close celebration">
+          x
+        </button>
+        <div className="task-complete-poppers" aria-hidden="true">
+          {popperColors.map((color, index) => (
+            <span
+              key={`${color}-${index}`}
+              className="task-complete-confetti"
+              style={{
+                '--confetti-color': color,
+                '--confetti-x': `${(index - 2.5) * 22}px`,
+                '--confetti-rotate': `${index % 2 === 0 ? '-' : ''}${18 + index * 6}deg`,
+                '--confetti-delay': `${index * 0.04}s`,
+              }}
+            />
+          ))}
+          <span className="task-complete-popper task-complete-popper-left" />
+          <span className="task-complete-popper task-complete-popper-right" />
+        </div>
+        <div className="task-complete-badge">Task Complete</div>
+        <h3 className="task-complete-title">Yay!, you completed a task</h3>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 const BLANK_FORM = { title: '', description: '', dueDate: '', originalDueDate: '' };
 
 function sortTodos(list) {
@@ -363,7 +406,7 @@ function sortTodos(list) {
   });
 }
 
-function TodoWidget({ todos, setTodos, completedTodos, setCompletedTodos, onComplete }) {
+function TodoWidget({ todos, setTodos, completedTodos, setCompletedTodos, onComplete, onTaskCelebration }) {
   const [tab,       setTab]       = useState('today');
   const [showForm,  setShowForm]  = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -436,6 +479,7 @@ function TodoWidget({ todos, setTodos, completedTodos, setCompletedTodos, onComp
         // Active → Completed: remove from todos, add to completedTodos
         setTodos(prev => prev.filter(t => t._id !== todo._id));
         setCompletedTodos(prev => [{ ...todo, isCompleted: true, createdAt: new Date().toISOString() }, ...prev]);
+        onTaskCelebration?.();
         await onComplete(); // await so streak card re-renders with fresh DB value
       } else {
         // Completed → Active: remove from completedTodos, add to todos
@@ -586,6 +630,7 @@ export default function Dashboard() {
   const [communities,    setCommunities]    = useState([]);
   const [showExplore,    setShowExplore]    = useState(false);
   const [sidebarOpen,    setSidebarOpen]    = useState(false);
+  const [showTaskCompletePopup, setShowTaskCompletePopup] = useState(false);
 
   const fetchUser           = useCallback(() => getUserProfile().then(({ userMetadata }) => setUser(userMetadata)).catch(console.error), []);
   const fetchTodos          = useCallback(() => getTodos().then(({ data }) => setTodos(data)).catch(console.error), []);
@@ -593,6 +638,11 @@ export default function Dashboard() {
   const fetchCommunities    = useCallback(() => getJoinedCommunities().then(({ communities }) => setCommunities(communities)).catch(console.error), []);
 
   useEffect(() => { fetchUser(); fetchTodos(); fetchCompletedTodos(); fetchCommunities(); }, [fetchUser, fetchTodos, fetchCompletedTodos, fetchCommunities]);
+  useEffect(() => {
+    if (!showTaskCompletePopup) return undefined;
+    const timeoutId = window.setTimeout(() => setShowTaskCompletePopup(false), 2000);
+    return () => window.clearTimeout(timeoutId);
+  }, [showTaskCompletePopup]);
 
   return (
     <div className="dash-root">
@@ -637,7 +687,14 @@ export default function Dashboard() {
 
           {/* Left column */}
           <div className="dash-col-right">
-            <TodoWidget todos={todos} setTodos={setTodos} completedTodos={completedTodos} setCompletedTodos={setCompletedTodos} onComplete={fetchUser} />
+            <TodoWidget
+              todos={todos}
+              setTodos={setTodos}
+              completedTodos={completedTodos}
+              setCompletedTodos={setCompletedTodos}
+              onComplete={fetchUser}
+              onTaskCelebration={() => setShowTaskCompletePopup(true)}
+            />
             <CommunitiesPanel navigate={navigate} communities={communities} onExplore={() => setShowExplore(true)} />
           </div>
 
@@ -659,6 +716,12 @@ export default function Dashboard() {
           />
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {showTaskCompletePopup && (
+          <TaskCompletePopup onClose={() => setShowTaskCompletePopup(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
